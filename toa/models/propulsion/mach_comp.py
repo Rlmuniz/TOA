@@ -1,0 +1,28 @@
+import numpy as np
+import openmdao.api as om
+
+
+class MachComp(om.ExplicitComponent):
+    """Computes mach."""
+
+    def initialize(self):
+        self.options.declare('num_nodes', types=int)
+
+    def setup(self):
+        nn = self.options['num_nodes']
+
+        self.add_input(name='tas', shape=(nn,), desc='True airspeed', units='m/s')
+        self.add_input(name='sos', shape=(nn,), desc='Atmospheric speed of sound', units='m/s')
+
+        self.add_output(name='mach', shape=(nn,), desc='Mach number', units=None)
+
+        ar = np.arange(nn)
+        self.declare_partials(of='mach', wrt='tas', rows=ar, cols=ar)
+        self.declare_partials(of='mach', wrt='sos', rows=ar, cols=ar)
+
+    def compute(self, inputs, outputs, **kwargs):
+        outputs['mach'] = inputs['tas'] / inputs['sos']
+
+    def compute_partials(self, inputs, partials, **kwargs):
+        partials['mach', 'sos'] = -inputs['tas'] / inputs['sos'] ** 2
+        partials['mach', 'tas'] = 1 / inputs['sos']
