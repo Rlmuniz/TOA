@@ -1,7 +1,7 @@
 import openmdao.api as om
 
 from toa.airplanes import AirplaneData
-from toa.models.ground_roll.aero.aero_forces_comp import AeroForcesComp
+from toa.models.aero.aero_forces_comp import AeroForcesComp
 from toa.models.rotation.aero_coef_comp import AeroCoeffComp
 
 

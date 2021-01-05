@@ -2,10 +2,10 @@ import openmdao.api as om
 
 from toa.airplanes import AirplaneData
 from toa.models.dynamic_pressure_comp import DynamicPressureComp
-from toa.models.ground_roll.aero.aerodynamics import AerodynamicsGroup
+from toa.models.aero.aerodynamics import AerodynamicsGroup
 from toa.models.ground_roll.ground_roll_eom import GroundRollEOM
-from toa.models.ground_roll.landing_gear_reaction import AllWheelsOnGroundReactionForces
-from toa.models.ground_roll.true_airspeed_comp import TrueAirspeedComp
+from toa.models.landing_gear.forces import AllWheelsOnGroundReactionForces
+from toa.models.aero.true_airspeed_comp import TrueAirspeedComp
 from toa.models.propulsion.thrust_comp import ThrustComp
 
 

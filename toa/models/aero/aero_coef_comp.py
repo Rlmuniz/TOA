@@ -7,13 +7,17 @@ class AeroCoeffComp(om.ExplicitComponent):
 
     def initialize(self):
         self.options.declare('num_nodes', types=int)
+        self.options.declare('configuration', default='takeoff', desc='Defines whether airplane is configured for takeoff or brake')
         self.options.declare('airplane_data', types=AirplaneData, desc='Class containing all airplane data')
 
     def setup(self):
         nn = self.options['num_nodes']
 
         self.add_input(name='alpha', val=np.zeros(nn), desc='Angle of attack', units='rad')
-        self.add_input(name='de', shape=(nn,), desc='Elevator angle', units='m/s')
+        self.add_input(name='de', val=np.zeros(nn), desc='Elevator angle', units='rad')
+        self.add_input(name='tas', val=np.zeros(nn), desc='True Airspeed', units='m/s')
+        self.add_input(name='q', val=np.zeros(nn), desc='Pitch Rate', units='rad/s')
+        self.add_input(name='rho', val=np.zeros(nn), desc='Atmospheric density', units='kg/m**3')
 
         self.add_output(name='CL', shape=(nn,), desc='Lift coefficient', units=None)
         self.add_output(name='CD', shape=(nn,), desc='Drag coefficient', units=None)
@@ -34,8 +38,10 @@ class AeroCoeffComp(om.ExplicitComponent):
         airplane = self.options['airplane_data']
         alpha = inputs['alpha']
         de = inputs['de']
+        q = inputs['q']
+        tas = inputs['tas']
 
-        CL = airplane.CL0 + airplane.CLa * alpha + airplane.CLde * de
+        CL = airplane.CL0 + airplane.CLa * alpha + airplane.CLde * de + airplane.CLq * qhat
         outputs['CL'] = CL
         outputs['CD'] = airplane.CDmin + airplane.kCDi * CL ** 2
         outputs['Cm'] = airplane.Cm0 + airplane.Cma * alpha + airplane.Cmde * de

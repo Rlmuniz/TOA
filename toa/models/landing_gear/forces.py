@@ -18,7 +18,7 @@ class AllWheelsOnGroundReactionForces(om.ExplicitComponent):
         self.add_input(name='lift', shape=(nn,), desc='Lift', units='N')
         self.add_input(name='moment', shape=(nn,), desc='Moment', units='N*m')
         self.add_input(name='thrust', shape=(nn,), desc='Thrust', units='N')
-        self.add_input(name='rw_slope', shape=(nn,), desc='Runway rw_slope', units='rad')
+        self.add_input(name='rw_slope', shape=(nn,), desc='Runway slope', units='rad')
         self.add_input(name='mass', shape=(nn,), desc='Airplane mass', units='kg')
         self.add_input(name='grav', shape=(nn,), desc='Gravity acceleration', units='m/s**2')
         self.add_input(name='mu', shape=(nn,), desc='Friction coefficient', units=None)

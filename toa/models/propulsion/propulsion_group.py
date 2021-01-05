@@ -7,6 +7,7 @@ from toa.models.propulsion.thrust_comp import ThrustComp
 
 
 class PropulsionGroup(om.Group):
+    """Computes the thrust and fuel flow considering the effect of speed and altitude."""
     def initialize(self):
         self.options.declare('num_nodes', types=int)
         self.options.declare('condition', default='AEO', desc='Takeoff condition (AEO/OEI)')
