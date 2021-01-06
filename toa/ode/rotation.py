@@ -1,11 +1,11 @@
 import openmdao.api as om
 
 from toa.airplanes import AirplaneData
-from toa.models.dynamic_pressure_comp import DynamicPressureComp
+from toa.models.aero.dynamic_pressure_comp import DynamicPressureComp
 from toa.models.aero.true_airspeed_comp import TrueAirspeedComp
 from toa.models.propulsion.thrust_comp import ThrustComp
 from toa.models.rotation.aerodynamics import AerodynamicsGroup
-from toa.models.rotation.rotation_eom import RotationEOM
+from toa.models.eom.rotation_eom import RotationEOM
 
 
 class RotationODE(om.Group):

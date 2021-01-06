@@ -1,3 +1,15 @@
+"""
+Inputs:
+ - True Airspeed
+ - Speed of Sound
+ - Ambient Pressure
+ - Altitude (Field elevation + CG distance from field level)
+
+ Outputs:
+  - Thrust
+  - dXdt:mass_fuel
+"""
+
 import openmdao.api as om
 
 from toa.airplanes import AirplaneData

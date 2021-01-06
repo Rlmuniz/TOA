@@ -11,6 +11,7 @@ class GroundRollEOM(om.ExplicitComponent):
     def setup(self):
         nn = self.options['num_nodes']
 
+        self.mu = 0.002
         # Inputs
         self.add_input(name='thrust', val=np.zeros(nn), desc='Engine total thrust', units='N')
         self.add_input(name='drag', val=np.zeros(nn), desc='Drag force', units='N')
@@ -43,7 +44,7 @@ class GroundRollEOM(om.ExplicitComponent):
         nlg_reaction = inputs['nlg_reaction']
         mass = inputs['mass']
         weight = inputs['grav'] * mass
-        mu = inputs['mu']
+        mu = self.mu
 
         sslope = np.sin(inputs['rw_slope'])
         calpha = np.cos(inputs['rw_slope'])
@@ -57,7 +58,7 @@ class GroundRollEOM(om.ExplicitComponent):
         nlg_reaction = inputs['nlg_reaction']
         mass = inputs['mass']
         grav = inputs['grav']
-        mu = inputs['mu']
+        mu = self.mu
 
         sslope = np.sin(inputs['rw_slope'])
         cslope = np.cos(inputs['rw_slope'])

@@ -1,10 +1,10 @@
 import openmdao.api as om
 
 from toa.airplanes import AirplaneData
-from toa.models.dynamic_pressure_comp import DynamicPressureComp
+from toa.models.aero.dynamic_pressure_comp import DynamicPressureComp
 from toa.models.aero.aerodynamics import AerodynamicsGroup
-from toa.models.ground_roll.ground_roll_eom import GroundRollEOM
-from toa.models.landing_gear.forces import AllWheelsOnGroundReactionForces
+from toa.models.eom.ground_roll_eom import GroundRollEOM
+from toa.models.landing_gear.forces_comp import AllWheelsOnGroundReactionForces
 from toa.models.aero.true_airspeed_comp import TrueAirspeedComp
 from toa.models.propulsion.thrust_comp import ThrustComp
 
@@ -21,11 +21,9 @@ class GroundRollODE(om.Group):
         n_motors = self.options['num_motors']
 
         assumptions = self.add_subsystem('assumptions', subsys=om.IndepVarComp())
-        assumptions.add_output(name='rho', val=1.1, desc='Density', units='kg/m**3')
         assumptions.add_output(name='grav', val=9.80665, desc='Gravity acceleration', units='m/s**2')
         assumptions.add_output(name='mu', val=0.002, desc='Friction coefficient', units=None)
         assumptions.add_output(name='rw_slope', val=0, desc='Runway rw_slope', units='rad')
-        assumptions.add_output(name='vw', val=0, desc='Wind speed along the runway, defined as positive for a headwind', units='m/s')
         assumptions.add_output(name='alpha', val=0, desc='angle of attack', units='rad')
 
         self.connect('assumptions.rho', 'dyn_pressure.rho')
@@ -43,7 +41,7 @@ class GroundRollODE(om.Group):
 
         self.connect('dyn_pressure.q', 'aero.q')
 
-        self.add_subsystem(name='aero', subsys=AerodynamicsGroup(num_nodes=nn, airplane_data=airplane), promotes_inputs=['alpha', 'de'], promotes_outputs=['L', 'D', 'M'])
+        self.add_subsystem(name='aero', subsys=AerodynamicsGroup(num_nodes=nn, airplane_data=airplane), promotes_inputs=['alpha', 'de', ''], promotes_outputs=['L', 'D', 'M'])
 
         self.connect('L', 'landing_gear.lift')
         self.connect('M', 'landing_gear.moment')

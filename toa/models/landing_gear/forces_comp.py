@@ -14,6 +14,8 @@ class AllWheelsOnGroundReactionForces(om.ExplicitComponent):
     def setup(self):
         nn = self.options['num_nodes']
 
+        self.mu = 0.002
+
         # Inputs
         self.add_input(name='lift', shape=(nn,), desc='Lift', units='N')
         self.add_input(name='moment', shape=(nn,), desc='Moment', units='N*m')
@@ -21,7 +23,6 @@ class AllWheelsOnGroundReactionForces(om.ExplicitComponent):
         self.add_input(name='rw_slope', shape=(nn,), desc='Runway slope', units='rad')
         self.add_input(name='mass', shape=(nn,), desc='Airplane mass', units='kg')
         self.add_input(name='grav', shape=(nn,), desc='Gravity acceleration', units='m/s**2')
-        self.add_input(name='mu', shape=(nn,), desc='Friction coefficient', units=None)
 
         # Outputs
         self.add_output(name='mlg_reaction', shape=(nn,), desc='Main landing gear reaction', units='N')
@@ -51,7 +52,7 @@ class AllWheelsOnGroundReactionForces(om.ExplicitComponent):
         rw_slope = inputs['rw_slope']
         mass = inputs['mass']
         grav = inputs['grav']
-        mu = inputs['mu']
+        mu = self.mu
 
         weight = grav * mass
         cs = np.cos(rw_slope)
@@ -67,7 +68,7 @@ class AllWheelsOnGroundReactionForces(om.ExplicitComponent):
         rw_slope = inputs['rw_slope']
         mass = inputs['mass']
         grav = inputs['grav']
-        mu = inputs['mu']
+        mu = self.mu
 
         weight = grav * mass
         ss = np.sin(rw_slope)
