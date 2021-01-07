@@ -1,2 +1,25 @@
 from toa.airplanes.base import AirplaneData
-from toa.airplanes.default import base_airplane
+
+b747 = AirplaneData(S=511,
+                    cbar=8.32104,
+                    Iy=44877574,
+                    CDmin=0.021,
+                    kCDi=0.049,
+                    CL0=0.92,
+                    CLa=4.4,
+                    CLde=0.32,
+                    CLq=6.6,
+                    Cm0=0.0,
+                    Cma=-1.00,
+                    Cmde=-1.30,
+                    Cmq=-20.5,
+                    xn=12,
+                    xm=1.2,
+                    zmn=3,
+                    zt=0,
+                    max_thrust_sl=235800,
+                    bypass_ratio=4.9,
+                    num_motors=4,
+                    cff1=2.64096,
+                    cff2=-1.28841,
+                    cff3=1.0963)

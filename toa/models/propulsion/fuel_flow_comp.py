@@ -16,7 +16,7 @@ class FuelFlowComp(om.ExplicitComponent):
         nn = self.options['num_nodes']
         airplane = self.options['airplane_data']
 
-        self.add_input(name='thrust_ratio', shape=(nn,), desc='Flow Rate', units='kg/s')
+        self.add_input(name='thrust_ratio', shape=(nn,), desc='Thrust ratio', units=None)
         self.add_input(name='thrust', shape=(nn,), desc='Thrust at current altitude and speed', units='N')
         self.add_input(name='alt', shape=(nn,), desc='Airplane altitude', units='m')
 

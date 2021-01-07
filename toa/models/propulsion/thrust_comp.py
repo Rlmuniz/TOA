@@ -27,7 +27,7 @@ class ThrustComp(om.ExplicitComponent):
 
         ar = np.arange(nn)
         self.declare_partials(of='thrust_ratio', wrt='p_amb', rows=ar, cols=ar)
-        self.declare_partials(of='thrust_ratio', wrt='p_amb', rows=ar, cols=ar)
+        self.declare_partials(of='thrust_ratio', wrt='mach', rows=ar, cols=ar)
         self.declare_partials(of='thrust', wrt='p_amb', rows=ar, cols=ar)
         self.declare_partials(of='thrust', wrt='mach', rows=ar, cols=ar)
 

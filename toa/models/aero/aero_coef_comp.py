@@ -33,10 +33,10 @@ class AeroCoeffComp(om.ExplicitComponent):
         self.declare_partials(of='CD', wrt='tas', rows=ar, cols=ar)
         self.declare_partials(of='CD', wrt='q', rows=ar, cols=ar)
 
-        self.declare_partials(of='CM', wrt='alpha', rows=ar, cols=ar)
-        self.declare_partials(of='CM', wrt='de', rows=ar, cols=ar)
-        self.declare_partials(of='CM', wrt='tas', rows=ar, cols=ar)
-        self.declare_partials(of='CM', wrt='q', rows=ar, cols=ar)
+        self.declare_partials(of='Cm', wrt='alpha', rows=ar, cols=ar)
+        self.declare_partials(of='Cm', wrt='de', rows=ar, cols=ar)
+        self.declare_partials(of='Cm', wrt='tas', rows=ar, cols=ar)
+        self.declare_partials(of='Cm', wrt='q', rows=ar, cols=ar)
 
     def compute(self, inputs, outputs, **kwargs):
         airplane = self.options['airplane_data']

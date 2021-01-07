@@ -32,18 +32,15 @@ class AerodynamicsGroup(om.Group):
         nn = self.options['num_nodes']
         airplane = self.options['airplane_data']
 
-        self.add_subsystem(name='tas_comp', subsys=TrueAirspeedComp(num_nodes=nn, airplane_data=airplane),
-                           promotes_inputs=['v', 'vw'])
-        self.connect('tas_comp.tas', 'aero_coef_comp.tas')
-        self.connect('tas_comp.tas', 'dyn_press.tas')
+        self.add_subsystem(name='tas_comp', subsys=TrueAirspeedComp(num_nodes=nn),
+                           promotes_inputs=['v', 'vw'], promotes_outputs=['tas'])
 
         self.add_subsystem(name='aero_coef_comp', subsys=AeroCoeffComp(num_nodes=nn, airplane_data=airplane),
-                           promotes_inputs=['alpha', 'de', 'q'],
+                           promotes_inputs=['alpha', 'de', 'q', 'tas'],
                            promotes_outputs=['CL', 'CD', 'Cm'])
 
-        self.add_subsystem(name='dyn_press', subsys=DynamicPressureComp(num_nodes=nn, airplane_data=airplane),
-                           promotes_inputs=['rho'])
-        self.connect('dyn_press.qbar', 'aero_forces_comp.qbar')
+        self.add_subsystem(name='dyn_press', subsys=DynamicPressureComp(num_nodes=nn),
+                           promotes_inputs=['rho', 'tas'], promotes_outputs=['qbar'])
 
         self.add_subsystem(name='aero_forces_comp', subsys=AeroForcesComp(num_nodes=nn, airplane_data=airplane),
-                           promotes_inputs=['CL', 'CD', 'Cm'], promotes_outputs=['L', 'D', 'M'])
+                           promotes_inputs=['CL', 'CD', 'Cm', 'qbar'], promotes_outputs=['L', 'D', 'M'])

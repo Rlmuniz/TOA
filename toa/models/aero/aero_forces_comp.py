@@ -20,7 +20,7 @@ class AeroForcesComp(om.ExplicitComponent):
         # Outputs
         self.add_output(name='L', shape=(nn,), desc='Lift coefficient', units='N')
         self.add_output(name='D', shape=(nn,), desc='Drag coefficient', units='N')
-        self.add_output(name='M', shape=(nn,), desc='Moment coefficient', units='N')
+        self.add_output(name='M', shape=(nn,), desc='Moment coefficient', units='N*m')
 
         # partials
         ar = np.arange(nn)
@@ -32,7 +32,7 @@ class AeroForcesComp(om.ExplicitComponent):
         self.declare_partials(of='M', wrt='qbar', rows=ar, cols=ar)
 
     def compute(self, inputs, outputs, **kwargs):
-        airplane = self.options['airplane']
+        airplane = self.options['airplane_data']
         qS = inputs['qbar'] * airplane.S
 
         outputs['L'] = qS * inputs['CL']
@@ -40,15 +40,15 @@ class AeroForcesComp(om.ExplicitComponent):
         outputs['M'] = qS * airplane.cbar * inputs['Cm']
 
     def compute_partials(self, inputs, partials, **kwargs):
-        airplane = self.options['airplane']
+        airplane = self.options['airplane_data']
 
         qS = inputs['qbar'] * airplane.S
 
         partials['L', 'CL'] = qS
-        partials['L', 'q'] = airplane.S * inputs['CL']
+        partials['L', 'qbar'] = airplane.S * inputs['CL']
 
         partials['D', 'CD'] = qS
-        partials['D', 'q'] = airplane.S * inputs['CD']
+        partials['D', 'qbar'] = airplane.S * inputs['CD']
 
         partials['M', 'Cm'] = qS * airplane.cbar
-        partials['M', 'q'] = airplane.cbar * airplane.S * inputs['Cm']
+        partials['M', 'qbar'] = airplane.cbar * airplane.S * inputs['Cm']

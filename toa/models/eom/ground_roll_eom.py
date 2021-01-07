@@ -17,25 +17,24 @@ class GroundRollEOM(om.ExplicitComponent):
         self.add_input(name='drag', val=np.zeros(nn), desc='Drag force', units='N')
         self.add_input(name='mlg_reaction', val=np.zeros(nn), desc='Main landing gear reaction', units='N')
         self.add_input(name='nlg_reaction', val=np.zeros(nn), desc='Nose landing gear reaction', units='N')
-        self.add_input(name='mu', val=np.zeros(nn), desc='Friction coefficient', units=None)
-        self.add_input(name='rw_slope', val=np.zeros(nn), desc='Runway slope', units='N')
-        self.add_input(name='grav', val=np.zeros(nn), desc='Gravity acceleration', units='m/s**2')
+        self.add_input(name='rw_slope', val=0.0, desc='Runway slope', units='rad')
+        self.add_input(name='grav', val=0.0, desc='Gravity acceleration', units='m/s**2')
         self.add_input(name='mass', val=np.zeros(nn), desc='Airplane mass', units='kg')
         self.add_input(name='alpha', val=np.zeros(nn), desc='Angle of attack', units='rad')
 
         # Outputs
-        self.add_output(name='v_dot', val=np.zeros(nn), desc="Body x axis acceleration", units='m/s**2')
+        self.add_output(name='dXdt:v', val=np.zeros(nn), desc="Body x axis acceleration", units='m/s**2')
 
         # Partials
         ar = np.arange(nn)
-        self.declare_partials(of='v_dot', wrt='thrust', rows=ar, cols=ar)
-        self.declare_partials(of='v_dot', wrt='drag', rows=ar, cols=ar)
-        self.declare_partials(of='v_dot', wrt='mlg_reaction', rows=ar, cols=ar)
-        self.declare_partials(of='v_dot', wrt='nlg_reaction', rows=ar, cols=ar)
-        self.declare_partials(of='v_dot', wrt='rw_slope', rows=ar, cols=ar)
-        self.declare_partials(of='v_dot', wrt='grav', rows=ar, cols=ar)
-        self.declare_partials(of='v_dot', wrt='mass', rows=ar, cols=ar)
-        self.declare_partials(of='v_dot', wrt='alpha', rows=ar, cols=ar)
+        self.declare_partials(of='dXdt:v', wrt='thrust', rows=ar, cols=ar)
+        self.declare_partials(of='dXdt:v', wrt='drag', rows=ar, cols=ar)
+        self.declare_partials(of='dXdt:v', wrt='mlg_reaction', rows=ar, cols=ar)
+        self.declare_partials(of='dXdt:v', wrt='nlg_reaction', rows=ar, cols=ar)
+        self.declare_partials(of='dXdt:v', wrt='rw_slope', rows=ar, cols=np.zeros(nn))
+        self.declare_partials(of='dXdt:v', wrt='grav', rows=ar, cols=np.zeros(nn))
+        self.declare_partials(of='dXdt:v', wrt='mass', rows=ar, cols=ar)
+        self.declare_partials(of='dXdt:v', wrt='alpha', rows=ar, cols=ar)
 
     def compute(self, inputs, outputs, **kwargs):
         thrust = inputs['thrust']
@@ -49,7 +48,7 @@ class GroundRollEOM(om.ExplicitComponent):
         sslope = np.sin(inputs['rw_slope'])
         calpha = np.cos(inputs['rw_slope'])
 
-        outputs['v_dot'] = (thrust * calpha - drag - mu * (mlg_reaction + nlg_reaction) - weight * sslope) / mass
+        outputs['dXdt:v'] = (thrust * calpha - drag - mu * (mlg_reaction + nlg_reaction) - weight * sslope) / mass
 
     def compute_partials(self, inputs, partials, **kwargs):
         thrust = inputs['thrust']
@@ -65,12 +64,12 @@ class GroundRollEOM(om.ExplicitComponent):
         calpha = np.cos(inputs['alpha'])
         salpha = np.sin(inputs['alpha'])
 
-        partials['v_dot', 'thrust'] = calpha / mass
-        partials['v_dot', 'drag'] = -1 / mass
-        partials['v_dot', 'mlg_reaction'] = - mu / mass
-        partials['v_dot', 'nlg_reaction'] = - mu / mass
-        partials['v_dot', 'rw_slope'] = - grav * cslope
-        partials['v_dot', 'grav'] = - sslope
-        partials['v_dot', 'mass'] = - grav * sslope / mass - (
+        partials['dXdt:v', 'thrust'] = calpha / mass
+        partials['dXdt:v', 'drag'] = -1 / mass
+        partials['dXdt:v', 'mlg_reaction'] = - mu / mass
+        partials['dXdt:v', 'nlg_reaction'] = - mu / mass
+        partials['dXdt:v', 'rw_slope'] = - grav * cslope
+        partials['dXdt:v', 'grav'] = - sslope
+        partials['dXdt:v', 'mass'] = - grav * sslope / mass - (
                 -drag - mu * (mlg_reaction + nlg_reaction) - grav * mass * sslope + thrust * calpha) / mass ** 2
-        partials['v_dot', 'alpha'] = - thrust * salpha / mass
+        partials['dXdt:v', 'alpha'] = - thrust * salpha / mass
