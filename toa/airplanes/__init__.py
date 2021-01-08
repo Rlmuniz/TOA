@@ -1,6 +1,7 @@
 from toa.airplanes.base import AirplaneData
 
 b747 = AirplaneData(S=511,
+                    wingspan=0.0,
                     cbar=8.32104,
                     Iy=44877574,
                     CDmin=0.021,

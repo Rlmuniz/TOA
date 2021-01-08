@@ -20,19 +20,10 @@ class GroundRollODE(om.Group):
         airplane = self.options['airplane_data']
 
         assumptions = self.add_subsystem('assumptions', subsys=om.IndepVarComp())
-        assumptions.add_output(name='alt', val=np.zeros(nn), desc='airplane CG elevation', units='m')
         assumptions.add_output(name='q', val=np.zeros(nn), desc='Pitch rate', units='rad/s')
-        assumptions.add_output(name='vw', val=0, desc='Wind speed along the runway, defined as positive for a headwind',
-                               units='m/s')
         assumptions.add_output(name='alpha', val=np.zeros(nn), desc='Angle of attack', units='rad')
-        assumptions.add_output(name='grav', val=9.80665, desc='Gravity acceleration', units='m/s**2')
-
-        self.connect('assumptions.alt', 'prop.alt')
-        self.connect('assumptions.alt', 'atmo.h')
         self.connect('assumptions.q', 'q')
-        self.connect('assumptions.vw', 'aero.vw')
         self.connect('assumptions.alpha', 'alpha')
-        self.connect('assumptions.grav', 'ground_run_eom.grav')
 
         self.add_subsystem(name='atmo', subsys=USatm1976Comp(num_nodes=nn))
         self.connect('atmo.rho', 'aero.rho')

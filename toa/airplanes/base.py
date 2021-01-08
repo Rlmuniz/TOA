@@ -5,6 +5,7 @@ from math import sqrt
 @dataclass(frozen=False)
 class AirplaneData:
     S: float
+    wingspan: float
     cbar: float
     Iy: float
     CDmin: float

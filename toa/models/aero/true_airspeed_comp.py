@@ -15,7 +15,8 @@ class TrueAirspeedComp(om.ExplicitComponent):
         self.add_output(name='tas', val=np.zeros(nn), desc="True airspeed", units='m/s')
 
         ar = np.arange(nn)
-        self.declare_partials(of='tas', wrt='v', rows=ar, cols=np.zeros(nn), val=1.0)
+        self.declare_partials(of='tas', wrt='v', rows=ar, cols=ar, val=1.0)
+        self.declare_partials(of='tas', wrt='vw', rows=ar, cols=np.zeros(nn), val=1.0)
 
     def compute(self, inputs, outputs, **kwargs):
         outputs['tas'] = inputs['v'] + inputs['vw']

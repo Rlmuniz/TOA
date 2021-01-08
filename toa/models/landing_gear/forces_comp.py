@@ -22,7 +22,7 @@ class AllWheelsOnGroundReactionForces(om.ExplicitComponent):
         self.add_input(name='thrust', shape=(nn,), desc='Thrust', units='N')
         self.add_input(name='rw_slope', val=0.0, desc='Runway slope', units='rad')
         self.add_input(name='mass', shape=(nn,), desc='Airplane mass', units='kg')
-        self.add_input(name='grav', shape=(nn,), desc='Gravity acceleration', units='m/s**2')
+        self.add_input(name='grav', val=0.0, desc='Gravity acceleration', units='m/s**2')
 
         # Outputs
         self.add_output(name='mlg_reaction', shape=(nn,), desc='Main landing gear reaction', units='N')
@@ -35,14 +35,14 @@ class AllWheelsOnGroundReactionForces(om.ExplicitComponent):
         self.declare_partials(of='mlg_reaction', wrt='thrust', rows=ar, cols=ar)
         self.declare_partials(of='mlg_reaction', wrt='rw_slope', rows=ar, cols=np.zeros(nn))
         self.declare_partials(of='mlg_reaction', wrt='mass', rows=ar, cols=ar)
-        self.declare_partials(of='mlg_reaction', wrt='grav', rows=ar, cols=ar)
+        self.declare_partials(of='mlg_reaction', wrt='grav', rows=ar, cols=np.zeros(nn))
 
         self.declare_partials(of='nlg_reaction', wrt='lift', rows=ar, cols=ar)
         self.declare_partials(of='nlg_reaction', wrt='moment', rows=ar, cols=ar)
         self.declare_partials(of='nlg_reaction', wrt='thrust', rows=ar, cols=ar)
         self.declare_partials(of='nlg_reaction', wrt='rw_slope', rows=ar, cols=np.zeros(nn))
         self.declare_partials(of='nlg_reaction', wrt='mass', rows=ar, cols=ar)
-        self.declare_partials(of='nlg_reaction', wrt='grav', rows=ar, cols=ar)
+        self.declare_partials(of='nlg_reaction', wrt='grav', rows=ar, cols=np.zeros(nn))
 
     def compute(self, inputs, outputs, **kwargs):
         airplane = self.options['airplane_data']
