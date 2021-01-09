@@ -2,7 +2,7 @@ import numpy as np
 import openmdao.api as om
 from dymos.models.atmosphere import USatm1976Comp
 
-from toa.airplanes import AirplaneData
+from toa.data import AirplaneData
 from toa.models.aero.aerodynamics import AerodynamicsGroup
 from toa.models.eom.ground_roll_eom import GroundRollEOM
 from toa.models.landing_gear.forces_comp import AllWheelsOnGroundReactionForces

@@ -3,7 +3,7 @@ import numpy as np
 import jax.numpy as jnp
 import openmdao.api as om
 
-from toa.airplanes import AirplaneData
+from toa.data import AirplaneData
 
 
 class RotationEOM(om.ExplicitComponent):
@@ -27,7 +27,7 @@ class RotationEOM(om.ExplicitComponent):
         self.grad_funcs = {
             'dXdt:v': dXdt_v_grad,
             'dXdt:q': dXdt_q_grad,
-            'rf_mainwheel_grad': rf_mainwheel_grad
+            'rf_mainwheel': rf_mainwheel_grad
         }
 
     def _compute_dXdt_v(self, thrust, lift, drag, moment, V, mass, alpha, q, grav, rw_slope):
@@ -80,43 +80,45 @@ class RotationEOM(om.ExplicitComponent):
     def setup_partials(self):
         nn = self.options['num_nodes']
         ar = np.arange(nn)
+        zz = np.zeros(nn)
+        ones = np.ones(nn)
 
-        self.declare_partials(of='dXdt:v', wrt='thrust')
-        self.declare_partials(of='dXdt:v', wrt='lift')
-        self.declare_partials(of='dXdt:v', wrt='drag')
-        self.declare_partials(of='dXdt:v', wrt='moment')
-        self.declare_partials(of='dXdt:v', wrt='V')
-        self.declare_partials(of='dXdt:v', wrt='mass')
-        self.declare_partials(of='dXdt:v', wrt='alpha')
-        self.declare_partials(of='dXdt:v', wrt='q')
-        self.declare_partials(of='dXdt:v', wrt='grav')
-        self.declare_partials(of='dXdt:v', wrt='rw_slope')
+        self.declare_partials(of='dXdt:v', wrt='thrust', rows=ar, cols=ar)
+        self.declare_partials(of='dXdt:v', wrt='lift', rows=ar, cols=ar)
+        self.declare_partials(of='dXdt:v', wrt='drag', rows=ar, cols=ar)
+        self.declare_partials(of='dXdt:v', wrt='moment', rows=ar, cols=ar)
+        self.declare_partials(of='dXdt:v', wrt='V', rows=ar, cols=ar)
+        self.declare_partials(of='dXdt:v', wrt='mass', rows=ar, cols=ar)
+        self.declare_partials(of='dXdt:v', wrt='alpha', rows=ar, cols=ar)
+        self.declare_partials(of='dXdt:v', wrt='q', rows=ar, cols=ar)
+        self.declare_partials(of='dXdt:v', wrt='grav', rows=ar, cols=zz)
+        self.declare_partials(of='dXdt:v', wrt='rw_slope', rows=ar, cols=zz)
 
-        self.declare_partials(of='dXdt:x', wrt='V', rows=ar, cols=ar, val=1.0)
+        self.declare_partials(of='dXdt:x', wrt='V', rows=ar, cols=ar, val=ones)
 
-        self.declare_partials(of='dXdt:alpha', wrt='q', rows=ar, cols=ar, val=1.0)
+        self.declare_partials(of='dXdt:alpha', wrt='q', rows=ar, cols=ar, val=ones)
 
-        self.declare_partials(of='dXdt:q', wrt='thrust')
-        self.declare_partials(of='dXdt:q', wrt='lift')
-        self.declare_partials(of='dXdt:q', wrt='drag')
-        self.declare_partials(of='dXdt:q', wrt='moment')
-        self.declare_partials(of='dXdt:q', wrt='V')
-        self.declare_partials(of='dXdt:q', wrt='mass')
-        self.declare_partials(of='dXdt:q', wrt='alpha')
-        self.declare_partials(of='dXdt:q', wrt='q')
-        self.declare_partials(of='dXdt:q', wrt='grav')
-        self.declare_partials(of='dXdt:q', wrt='rw_slope')
+        self.declare_partials(of='dXdt:q', wrt='thrust', rows=ar, cols=ar)
+        self.declare_partials(of='dXdt:q', wrt='lift', rows=ar, cols=ar)
+        self.declare_partials(of='dXdt:q', wrt='drag', rows=ar, cols=ar)
+        self.declare_partials(of='dXdt:q', wrt='moment', rows=ar, cols=ar)
+        self.declare_partials(of='dXdt:q', wrt='V', rows=ar, cols=ar)
+        self.declare_partials(of='dXdt:q', wrt='mass', rows=ar, cols=ar)
+        self.declare_partials(of='dXdt:q', wrt='alpha', rows=ar, cols=ar)
+        self.declare_partials(of='dXdt:q', wrt='q', rows=ar, cols=ar)
+        self.declare_partials(of='dXdt:q', wrt='grav', rows=ar, cols=zz)
+        self.declare_partials(of='dXdt:q', wrt='rw_slope', rows=ar, cols=zz)
 
-        self.declare_partials(of='rf_mainwheel', wrt='thrust')
-        self.declare_partials(of='rf_mainwheel', wrt='lift')
-        self.declare_partials(of='rf_mainwheel', wrt='drag')
-        self.declare_partials(of='rf_mainwheel', wrt='moment')
-        self.declare_partials(of='rf_mainwheel', wrt='V')
-        self.declare_partials(of='rf_mainwheel', wrt='mass')
-        self.declare_partials(of='rf_mainwheel', wrt='alpha')
-        self.declare_partials(of='rf_mainwheel', wrt='q')
-        self.declare_partials(of='rf_mainwheel', wrt='grav')
-        self.declare_partials(of='rf_mainwheel', wrt='rw_slope')
+        self.declare_partials(of='rf_mainwheel', wrt='thrust', rows=ar, cols=ar)
+        self.declare_partials(of='rf_mainwheel', wrt='lift', rows=ar, cols=ar)
+        self.declare_partials(of='rf_mainwheel', wrt='drag', rows=ar, cols=ar)
+        self.declare_partials(of='rf_mainwheel', wrt='moment', rows=ar, cols=ar)
+        self.declare_partials(of='rf_mainwheel', wrt='V', rows=ar, cols=ar)
+        self.declare_partials(of='rf_mainwheel', wrt='mass', rows=ar, cols=ar)
+        self.declare_partials(of='rf_mainwheel', wrt='alpha', rows=ar, cols=ar)
+        self.declare_partials(of='rf_mainwheel', wrt='q', rows=ar, cols=ar)
+        self.declare_partials(of='rf_mainwheel', wrt='grav', rows=ar, cols=zz)
+        self.declare_partials(of='rf_mainwheel', wrt='rw_slope', rows=ar, cols=zz)
 
     def compute(self, inputs, outputs, **kwargs):
         thrust = inputs['thrust']
@@ -127,8 +129,8 @@ class RotationEOM(om.ExplicitComponent):
         mass = inputs['mass']
         alpha = inputs['alpha']
         q = inputs['q']
-        grav = inputs['grav']
-        rw_slope = inputs['rw_slope']
+        grav, = inputs['grav']
+        rw_slope, = inputs['rw_slope']
 
         for out, res in self._compute(thrust, lift, drag, moment, V, mass, alpha, q, grav, rw_slope).items():
             outputs[out] = res
@@ -142,8 +144,8 @@ class RotationEOM(om.ExplicitComponent):
         mass = inputs['mass']
         alpha = inputs['alpha']
         q = inputs['q']
-        grav = inputs['grav']
-        rw_slope = inputs['rw_slope']
+        grav, = inputs['grav']
+        rw_slope, = inputs['rw_slope']
 
         wrt = 'thrust', 'lift', 'drag', 'moment', 'V', 'mass', 'alpha', 'q', 'grav', 'rw_slope'
         args = thrust, lift, drag, moment, V, mass, alpha, q, grav, rw_slope

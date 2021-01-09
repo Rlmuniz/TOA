@@ -14,7 +14,7 @@ Outputs:
 
 import openmdao.api as om
 
-from toa.airplanes import AirplaneData
+from toa.data import AirplaneData
 from toa.models.aero.aero_coef_comp import AeroCoeffComp
 from toa.models.aero.aero_coef_comp import AeroCoeffCompInitialRun
 from toa.models.aero.aero_forces_comp import AeroForcesComp

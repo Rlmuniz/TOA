@@ -1,6 +1,6 @@
 import numpy as np
 import openmdao.api as om
-from toa.airplanes import AirplaneData
+from toa.data import AirplaneData
 
 
 class AeroCoeffComp(om.ExplicitComponent):

@@ -21,15 +21,14 @@ class DynamicPressureComp(om.ExplicitComponent):
                         units='Pa')
 
     def setup_partials(self):
-        self.declare_partials(of='qbar', wrt='rho')
-        self.declare_partials(of='qbar', wrt='tas')
+        nn = self.options['num_nodes']
+        ar = np.arange(nn)
+        self.declare_partials(of='qbar', wrt='rho', rows=ar, cols=np.zeros(nn))
+        self.declare_partials(of='qbar', wrt='tas', rows=ar, cols=ar)
 
     def compute(self, inputs, outputs, **kwargs):
         outputs['qbar'] = 0.5 * inputs['rho'] * inputs['tas'] ** 2
 
     def compute_partials(self, inputs, partials, **kwargs):
-        tas = inputs['tas']
-        rho = inputs['rho']
-
-        partials['qbar', 'rho'] = 0.5 * tas ** 2
-        partials['qbar', 'tas'] = rho * tas
+        partials['qbar', 'rho'] = 0.5 * inputs['tas'] ** 2
+        partials['qbar', 'tas'] = inputs['rho'] * inputs['tas']

@@ -12,7 +12,7 @@ Inputs:
 
 import openmdao.api as om
 
-from toa.airplanes import AirplaneData
+from toa.data import AirplaneData
 from toa.models.propulsion.fuel_flow_comp import FuelFlowComp
 from toa.models.propulsion.mach_comp import MachComp
 from toa.models.propulsion.thrust_comp import ThrustComp

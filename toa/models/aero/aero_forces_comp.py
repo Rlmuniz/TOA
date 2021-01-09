@@ -1,6 +1,6 @@
 import numpy as np
 import openmdao.api as om
-from toa.airplanes import AirplaneData
+from toa.data import AirplaneData
 
 
 class AeroForcesComp(om.ExplicitComponent):
@@ -24,20 +24,22 @@ class AeroForcesComp(om.ExplicitComponent):
         self.add_output(name='M', shape=(nn,), desc='Moment coefficient', units='N*m')
 
     def setup_partials(self):
-        self.declare_partials(of='L', wrt='CL')
+        nn = self.options['num_nodes']
+        ar = np.arange(nn)
+        self.declare_partials(of='L', wrt='CL', rows=ar, cols=ar)
         self.declare_partials(of='L', wrt='CD', dependent=False)
         self.declare_partials(of='L', wrt='Cm', dependent=False)
-        self.declare_partials(of='L', wrt='qbar')
+        self.declare_partials(of='L', wrt='qbar', rows=ar, cols=ar)
 
         self.declare_partials(of='D', wrt='CL', dependent=False)
-        self.declare_partials(of='D', wrt='CD')
+        self.declare_partials(of='D', wrt='CD', rows=ar, cols=ar)
         self.declare_partials(of='D', wrt='Cm', dependent=False)
-        self.declare_partials(of='D', wrt='qbar')
+        self.declare_partials(of='D', wrt='qbar', rows=ar, cols=ar)
 
         self.declare_partials(of='M', wrt='CL', dependent=False)
         self.declare_partials(of='M', wrt='CD', dependent=False)
-        self.declare_partials(of='M', wrt='Cm')
-        self.declare_partials(of='M', wrt='qbar')
+        self.declare_partials(of='M', wrt='Cm', rows=ar, cols=ar)
+        self.declare_partials(of='M', wrt='qbar', rows=ar, cols=ar)
 
     def compute(self, inputs, outputs, **kwargs):
         airplane = self.options['airplane_data']

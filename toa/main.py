@@ -2,7 +2,7 @@ import openmdao.api as om
 import dymos as dm
 from dymos.models.atmosphere import USatm1976Comp
 import matplotlib.pyplot as plt
-from toa.airplanes import b747
+from toa.data import b747
 
 from toa.ode.ground_roll import GroundRollODE
 from toa.ode.rotation import RotationODE
@@ -98,17 +98,20 @@ traj.add_parameter('p_amb', targets={'ground_roll': ['prop.thrust_comp.p_amb'], 
 
 traj.link_phases(phases=['initial_run', 'rotation'], vars=['time', 'x', 'V', 'mass', 'alpha'])
 
-p.model.connect('external_params.elevation', ['atmo.h', 'traj.parameters:elevation'])
+p.model.connect('external_params.elevation', 'traj.parameters:elevation')
 p.model.connect('external_params.rw_slope', 'traj.parameters:rw_slope')
 
-p.model.connect('atmo.rho', 'traj.parameters:rho')
-p.model.connect('atmo.sos', 'traj.parameters:sos')
-p.model.connect('atmo.pres', 'traj.parameters:p_amb')
+#p.model.connect('atmo.rho', 'traj.parameters:rho')
+#p.model.connect('atmo.sos', 'traj.parameters:sos')
+#p.model.connect('atmo.pres', 'traj.parameters:p_amb')
 
 # Setup the problem
 p.setup(check=True)
 
 p.set_val('traj.parameters:grav', 9.80665)
+p.set_val('traj.parameters:rho', 1.225)
+p.set_val('traj.parameters:sos', 340)
+p.set_val('traj.parameters:p_amb', 101325.0)
 p.set_val('traj.parameters:Vw', 0.0)
 
 # Initial guesses

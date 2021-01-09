@@ -1,4 +1,4 @@
-from toa.airplanes.base import AirplaneData
+from toa.data.airplane_data import AirplaneData
 
 b747 = AirplaneData(S=511,
                     wingspan=0.0,

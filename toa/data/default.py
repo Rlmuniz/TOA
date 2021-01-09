@@ -1,4 +1,4 @@
-#from toa.airplanes import AirplaneData
+#from toa.data import AirplaneData
 
 #base_airplane = AirplaneData(S=16.0, cbar=1.5, Iy=1825.0, CDmin=0.02, kCDi=0.07, CL0=0.2977, CLa=4.41, CLde=0.43, CLq=3.9,
 #                       Cm0=0.03917,

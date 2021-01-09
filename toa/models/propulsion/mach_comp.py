@@ -17,8 +17,12 @@ class MachComp(om.ExplicitComponent):
         self.add_output(name='mach', shape=(nn,), desc='Mach number', units=None)
 
     def setup_partials(self):
-        self.declare_partials(of='mach', wrt='tas')
-        self.declare_partials(of='mach', wrt='sos')
+        nn = self.options['num_nodes']
+        ar = np.arange(nn)
+        zz = np.zeros(nn)
+
+        self.declare_partials(of='mach', wrt='tas', rows=ar, cols=ar)
+        self.declare_partials(of='mach', wrt='sos', rows=ar, cols=zz)
 
     def compute(self, inputs, outputs, **kwargs):
         outputs['mach'] = inputs['tas'] / inputs['sos']

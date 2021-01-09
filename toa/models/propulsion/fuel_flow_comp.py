@@ -1,7 +1,7 @@
 import numpy as np
 import openmdao.api as om
 
-from toa.airplanes import AirplaneData
+from toa.data import AirplaneData
 
 
 class FuelFlowComp(om.ExplicitComponent):
@@ -29,9 +29,12 @@ class FuelFlowComp(om.ExplicitComponent):
                         units='kg/s')
 
     def setup_partials(self):
-        self.declare_partials(of='dXdt:mass_fuel', wrt='thrust_ratio')
-        self.declare_partials(of='dXdt:mass_fuel', wrt='thrust')
-        self.declare_partials(of='dXdt:mass_fuel', wrt='elevation')
+        nn = self.options['num_nodes']
+        ar = np.arange(nn)
+        zz = np.zeros(nn)
+        self.declare_partials(of='dXdt:mass_fuel', wrt='thrust_ratio', rows=ar, cols=ar)
+        self.declare_partials(of='dXdt:mass_fuel', wrt='thrust', rows=ar, cols=ar)
+        self.declare_partials(of='dXdt:mass_fuel', wrt='elevation', rows=ar, cols=zz)
 
     def compute(self, inputs, outputs, **kwargs):
         airplane = self.options['airplane_data']

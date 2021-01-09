@@ -4,12 +4,17 @@ from math import sqrt
 
 @dataclass(frozen=False)
 class AirplaneData:
-    S: float
     wingspan: float
     cbar: float
     Iy: float
-    CDmin: float
-    kCDi: float
+
+    xn: float
+    xm: float
+    zmn: float
+    zt: float
+    S: float
+
+    # Coefficients
     CL0: float
     CLa: float
     CLde: float
@@ -18,10 +23,6 @@ class AirplaneData:
     Cma: float
     Cmde: float
     Cmq: float
-    xn: float
-    xm: float
-    zmn: float
-    zt: float
 
     ## Engine
     max_thrust_sl: float

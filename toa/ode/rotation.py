@@ -1,6 +1,6 @@
 import openmdao.api as om
 
-from toa.airplanes import AirplaneData
+from toa.data import AirplaneData
 from toa.models.aero.aerodynamics import AerodynamicsGroup
 from toa.models.eom.rotation_eom import RotationEOM
 from toa.models.propulsion.propulsion_group import PropulsionGroup
