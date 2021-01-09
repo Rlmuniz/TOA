@@ -3,7 +3,7 @@ import openmdao.api as om
 from toa.data import AirplaneData
 
 
-class LiftCoeffCompAllWheelsOnGround(om.ExplicitComponent):
+class LiftCoeffAllWheelsOnGroundComp(om.ExplicitComponent):
 
     def initialize(self):
         self.options.declare('num_nodes', types=int)
@@ -42,14 +42,14 @@ class LiftCoeffComp(om.ExplicitComponent):
 
     def setup(self):
         nn = self.options['num_nodes']
-        nz = np.zeros(nn)
+        zeros = np.zeros(nn)
 
-        self.add_input(name='alpha', shape=(nn,), desc='Angle of attack', units='rad')
-        self.add_input(name='de', shape=(nn,), desc='Elevator angle', units='rad')
-        self.add_input(name='tas', shape=(nn,), desc='True Airspeed', units='m/s')
-        self.add_input(name='q', shape=(nn,), desc='Pitch Rate', units='rad/s')
+        self.add_input(name='alpha', val=zeros, desc='Angle of attack', units='rad')
+        self.add_input(name='de', val=zeros, desc='Elevator angle', units='rad')
+        self.add_input(name='tas', val=zeros, desc='True Airspeed', units='m/s')
+        self.add_input(name='q', val=zeros, desc='Pitch Rate', units='rad/s')
 
-        self.add_output(name='CL', shape=(nn,), desc='Lift coefficient', units=None)
+        self.add_output(name='CL', val=zeros, desc='Lift coefficient', units=None)
 
     def setup_partials(self):
         airplane = self.options['airplane_data']
@@ -84,5 +84,5 @@ class LiftCoeffComp(om.ExplicitComponent):
 
         partials['CL', 'alpha'] = airplane.coeffs.CLalpha
         partials['CL', 'de'] = airplane.coeffs.CLde
-        partials['CL', 'q'] = airplane.wings.mac / (2 * tas)
-        partials['CL', 'tas'] = - q * airplane.wings.mac / (2 * tas ** 2)
+        partials['CL', 'q'] = airplane.coeffs.CLq * airplane.wings.mac / (2 * tas)
+        partials['CL', 'tas'] = - airplane.coeffs.CLq * q * airplane.wings.mac / (2 * tas ** 2)
