@@ -7,7 +7,8 @@ class AeroForcesComp(om.ExplicitComponent):
 
     def initialize(self):
         self.options.declare('num_nodes', types=int)
-        self.options.declare('airplane_data', types=AirplaneData, desc='Class containing all airplane data')
+        self.options.declare('airplane_data', types=AirplaneData,
+                             desc='Class containing all airplane data')
 
     def setup(self):
         nn = self.options['num_nodes']
@@ -15,21 +16,28 @@ class AeroForcesComp(om.ExplicitComponent):
         self.add_input(name='CL', shape=(nn,), desc='Lift coefficient', units=None)
         self.add_input(name='CD', shape=(nn,), desc='Drag coefficient', units=None)
         self.add_input(name='Cm', shape=(nn,), desc='Moment coefficient', units=None)
-        self.add_input(name='qbar', val=np.zeros(nn), desc='Dynamic pressure', units='Pa')
+        self.add_input(name='qbar', shape=(nn,), desc='Dynamic pressure', units='Pa')
 
         # Outputs
         self.add_output(name='L', shape=(nn,), desc='Lift coefficient', units='N')
         self.add_output(name='D', shape=(nn,), desc='Drag coefficient', units='N')
         self.add_output(name='M', shape=(nn,), desc='Moment coefficient', units='N*m')
 
-        # partials
-        ar = np.arange(nn)
-        self.declare_partials(of='L', wrt='CL', rows=ar, cols=ar)
-        self.declare_partials(of='L', wrt='qbar', rows=ar, cols=ar)
-        self.declare_partials(of='D', wrt='CD', rows=ar, cols=ar)
-        self.declare_partials(of='D', wrt='qbar', rows=ar, cols=ar)
-        self.declare_partials(of='M', wrt='Cm', rows=ar, cols=ar)
-        self.declare_partials(of='M', wrt='qbar', rows=ar, cols=ar)
+    def setup_partials(self):
+        self.declare_partials(of='L', wrt='CL')
+        self.declare_partials(of='L', wrt='CD', dependent=False)
+        self.declare_partials(of='L', wrt='Cm', dependent=False)
+        self.declare_partials(of='L', wrt='qbar')
+
+        self.declare_partials(of='D', wrt='CL', dependent=False)
+        self.declare_partials(of='D', wrt='CD')
+        self.declare_partials(of='D', wrt='Cm', dependent=False)
+        self.declare_partials(of='D', wrt='qbar')
+
+        self.declare_partials(of='M', wrt='CL', dependent=False)
+        self.declare_partials(of='M', wrt='CD', dependent=False)
+        self.declare_partials(of='M', wrt='Cm')
+        self.declare_partials(of='M', wrt='qbar')
 
     def compute(self, inputs, outputs, **kwargs):
         airplane = self.options['airplane_data']
@@ -41,7 +49,6 @@ class AeroForcesComp(om.ExplicitComponent):
 
     def compute_partials(self, inputs, partials, **kwargs):
         airplane = self.options['airplane_data']
-
         qS = inputs['qbar'] * airplane.S
 
         partials['L', 'CL'] = qS

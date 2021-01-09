@@ -12,13 +12,13 @@ class MachComp(om.ExplicitComponent):
         nn = self.options['num_nodes']
 
         self.add_input(name='tas', shape=(nn,), desc='True airspeed', units='m/s')
-        self.add_input(name='sos', shape=(nn,), desc='Atmospheric speed of sound', units='m/s')
+        self.add_input(name='sos', shape=(1,), desc='Atmospheric speed of sound', units='m/s')
 
         self.add_output(name='mach', shape=(nn,), desc='Mach number', units=None)
 
-        ar = np.arange(nn)
-        self.declare_partials(of='mach', wrt='tas', rows=ar, cols=ar)
-        self.declare_partials(of='mach', wrt='sos', rows=ar, cols=ar)
+    def setup_partials(self):
+        self.declare_partials(of='mach', wrt='tas')
+        self.declare_partials(of='mach', wrt='sos')
 
     def compute(self, inputs, outputs, **kwargs):
         outputs['mach'] = inputs['tas'] / inputs['sos']

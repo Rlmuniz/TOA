@@ -16,9 +16,9 @@ import openmdao.api as om
 
 from toa.airplanes import AirplaneData
 from toa.models.aero.aero_coef_comp import AeroCoeffComp
+from toa.models.aero.aero_coef_comp import AeroCoeffCompInitialRun
 from toa.models.aero.aero_forces_comp import AeroForcesComp
 from toa.models.aero.dynamic_pressure_comp import DynamicPressureComp
-from toa.models.aero.true_airspeed_comp import TrueAirspeedComp
 
 
 class AerodynamicsGroup(om.Group):
@@ -26,21 +26,32 @@ class AerodynamicsGroup(om.Group):
 
     def initialize(self):
         self.options.declare('num_nodes', types=int)
-        self.options.declare('airplane_data', types=AirplaneData, desc='Class containing all airplane data')
+        self.options.declare('airplane_data', types=AirplaneData,
+                             desc='Class containing all airplane data')
+        self.options.declare('phase', default='initial_run',
+                             desc='Initial run, rotation, transition')
 
     def setup(self):
         nn = self.options['num_nodes']
+        phase = self.options['phase']
         airplane = self.options['airplane_data']
 
-        self.add_subsystem(name='tas_comp', subsys=TrueAirspeedComp(num_nodes=nn),
-                           promotes_inputs=['v', 'vw'], promotes_outputs=['tas'])
-
-        self.add_subsystem(name='aero_coef_comp', subsys=AeroCoeffComp(num_nodes=nn, airplane_data=airplane),
-                           promotes_inputs=['alpha', 'de', 'q', 'tas'],
-                           promotes_outputs=['CL', 'CD', 'Cm'])
+        if phase == 'initial_run':
+            self.add_subsystem(name='aero_coef_comp',
+                               subsys=AeroCoeffCompInitialRun(num_nodes=nn,
+                                                              airplane_data=airplane),
+                               promotes_inputs=['alpha', 'de'],
+                               promotes_outputs=['CL', 'CD', 'Cm'])
+        else:
+            self.add_subsystem(name='aero_coef_comp', subsys=AeroCoeffComp(num_nodes=nn,
+                                                                           airplane_data=airplane),
+                               promotes_inputs=['alpha', 'de', 'tas', 'q'],
+                               promotes_outputs=['CL', 'CD', 'Cm'])
 
         self.add_subsystem(name='dyn_press', subsys=DynamicPressureComp(num_nodes=nn),
                            promotes_inputs=['rho', 'tas'], promotes_outputs=['qbar'])
 
-        self.add_subsystem(name='aero_forces_comp', subsys=AeroForcesComp(num_nodes=nn, airplane_data=airplane),
-                           promotes_inputs=['CL', 'CD', 'Cm', 'qbar'], promotes_outputs=['L', 'D', 'M'])
+        self.add_subsystem(name='aero_forces_comp',
+                           subsys=AeroForcesComp(num_nodes=nn, airplane_data=airplane),
+                           promotes_inputs=['CL', 'CD', 'Cm', 'qbar'],
+                           promotes_outputs=['L', 'D', 'M'])

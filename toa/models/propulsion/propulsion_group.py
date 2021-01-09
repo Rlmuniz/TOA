@@ -37,20 +37,20 @@ class PropulsionGroup(om.Group):
         thrust_rating = self.options['thrust_rating']
 
         self.add_subsystem(name='mach_comp', subsys=MachComp(num_nodes=nn),
-                           promotes_inputs=['tas', 'sos'],
-                           promotes_outputs=['mach'])
+                           promotes_inputs=['tas', 'sos'])
 
-        self.add_subsystem(name='trust_comp',
+        self.connect('mach_comp.mach', 'thrust_comp.mach')
+
+        self.add_subsystem(name='thrust_comp',
                            subsys=ThrustComp(num_nodes=nn, airplane_data=airplane,
                                              condition=condition,
                                              thrust_rating=thrust_rating),
-                           promotes_inputs=['mach', 'p_amb'],
                            promotes_outputs=['thrust'])
 
-        self.connect('trust_comp.thrust_ratio', 'fuel_flow.thrust_ratio')
+        self.connect('thrust_comp.thrust_ratio', 'fuel_flow.thrust_ratio')
 
         self.add_subsystem(name='fuel_flow',
                            subsys=FuelFlowComp(num_nodes=nn, airplane_data=airplane,
                                                condition=condition),
-                           promotes_inputs=['thrust', 'alt'],
+                           promotes_inputs=['thrust'],
                            promotes_outputs=['dXdt:mass_fuel'])
