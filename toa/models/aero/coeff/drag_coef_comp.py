@@ -1,13 +1,14 @@
 import numpy as np
 import openmdao.api as om
-from toa.data import AirplaneData
+
+from toa.data.airplanes.airplanes import Airplanes
 
 
 class DragCoeffComp(om.ExplicitComponent):
 
     def initialize(self):
         self.options.declare('num_nodes', types=int)
-        self.options.declare('airplane_data', types=AirplaneData, desc='Class containing all airplane data')
+        self.options.declare('airplane_data', types=Airplanes, desc='Class containing all airplane data')
         self.options.declare('landing_gear', default=True, desc='Accounts landing gear drag')
 
     def setup(self):
@@ -15,8 +16,8 @@ class DragCoeffComp(om.ExplicitComponent):
 
         self.add_input(name='flap_angle', shape=(1,), desc='Flap deflection', units='rad')
         self.add_input(name='CL', shape=(nn,), desc='Lift coefficient', units=None)
-        self.add_input(name='mass', shape=(nn,), desc='Airplane mass', units=None)
-        self.add_input(name='grav', shape=(1,), desc='Airplane mass', units=None)
+        self.add_input(name='mass', shape=(nn,), desc='Airplane mass', units='kg')
+        self.add_input(name='grav', shape=(1,), desc='Airplane mass', units='m/s**2')
 
         self.add_output(name='CD', shape=(nn,), desc='Drag coefficient', units=None)
 

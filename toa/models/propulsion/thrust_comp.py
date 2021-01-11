@@ -1,7 +1,7 @@
 import numpy as np
 import openmdao.api as om
 
-from toa.data import AirplaneData
+from toa.data.airplanes.airplanes import Airplanes
 
 
 class ThrustComp(om.ExplicitComponent):
@@ -11,7 +11,7 @@ class ThrustComp(om.ExplicitComponent):
         self.options.declare('num_nodes', types=int)
         self.options.declare('condition', default='AEO', desc='Takeoff condition (AEO/OEI)')
         self.options.declare('thrust_rating', default='takeoff', desc='Thrust rate (takeoff, idle)')
-        self.options.declare('airplane_data', types=AirplaneData, desc='Class containing all airplane data')
+        self.options.declare('airplane_data', types=Airplanes, desc='Class containing all airplane data')
 
     def setup(self):
         nn = self.options['num_nodes']
@@ -26,10 +26,14 @@ class ThrustComp(om.ExplicitComponent):
         self.add_output(name='thrust', val=np.zeros(nn), desc='Thrust at current altitude and speed', units='N')
 
     def setup_partials(self):
-        self.declare_partials(of='thrust_ratio', wrt='p_amb', method='fd', form='central', step=1e-4)
-        self.declare_partials(of='thrust_ratio', wrt='mach', method='fd', form='central', step=1e-4)
-        self.declare_partials(of='thrust', wrt='p_amb', method='fd', form='central', step=1e-4)
-        self.declare_partials(of='thrust', wrt='mach', method='fd', form='central', step=1e-4)
+        nn = self.options['num_nodes']
+        ar = np.arange(nn)
+        zz = np.zeros(nn)
+
+        self.declare_partials(of='thrust_ratio', wrt='p_amb', rows=ar, cols=zz, method='fd', form='central', step=1e-4)
+        self.declare_partials(of='thrust_ratio', wrt='mach', rows=ar, cols=ar, method='fd', form='central', step=1e-4)
+        self.declare_partials(of='thrust', wrt='p_amb', rows=ar, cols=zz, method='fd', form='central', step=1e-4)
+        self.declare_partials(of='thrust', wrt='mach', rows=ar, cols=ar, method='fd', form='central', step=1e-4)
 
     def compute(self, inputs, outputs, **kwargs):
         airplane = self.options['airplane_data']
@@ -42,7 +46,7 @@ class ThrustComp(om.ExplicitComponent):
         X = 0.1377 * press_ratio ** 3 - 0.4374 * press_ratio ** 2 + 1.3003 * press_ratio
 
         multiplier = 1.0 if self.options['thrust_rating'] == 'takeoff' else 0.07
-        num_motors = airplane.num_motors if self.options['condition'] == 'AEO' else airplane.num_motors - 1
+        num_motors = airplane.engine.num_motors if self.options['condition'] == 'AEO' else airplane.engine.num_motors - 1
 
-        outputs['thrust_ratio'] = (A - airplane.k1 * Z * mach + airplane.k2 * X * mach ** 2) * multiplier
-        outputs['thrust'] = outputs['thrust_ratio'] * airplane.max_thrust_sl * num_motors
+        outputs['thrust_ratio'] = (A - airplane.engine.k1 * Z * mach + airplane.engine.k2 * X * mach ** 2) * multiplier
+        outputs['thrust'] = outputs['thrust_ratio'] * airplane.engine.max_thrust_sl * num_motors

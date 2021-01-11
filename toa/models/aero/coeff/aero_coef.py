@@ -1,6 +1,7 @@
 import openmdao.api as om
 
-from toa.data import AirplaneData
+
+from toa.data.airplanes.airplanes import Airplanes
 from toa.models.aero.coeff.drag_coef_comp import DragCoeffComp
 from toa.models.aero.coeff.lift_coef_comp import LiftCoeffAllWheelsOnGroundComp
 from toa.models.aero.coeff.lift_coef_comp import LiftCoeffComp
@@ -13,7 +14,7 @@ class AerodynamicsCoefficientsGroup(om.Group):
 
     def initialize(self):
         self.options.declare('num_nodes', types=int)
-        self.options.declare('airplane_data', types=AirplaneData, desc='Class containing all airplane data')
+        self.options.declare('airplane_data', types=Airplanes, desc='Class containing all airplane data')
         self.options.declare('landing_gear', default=True, desc='Accounts landing gear drag')
         self.options.declare('AllWheelsOnGround', default=True)
 

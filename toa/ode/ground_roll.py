@@ -2,10 +2,9 @@ import numpy as np
 import openmdao.api as om
 from dymos.models.atmosphere import USatm1976Comp
 
-from toa.data import AirplaneData
+from toa.data.airplanes.airplanes import Airplanes
 from toa.models.aero.aerodynamics import AerodynamicsGroup
 from toa.models.eom.ground_roll_eom import GroundRollEOM
-from toa.models.landing_gear.forces_comp import AllWheelsOnGroundReactionForces
 from toa.models.propulsion.propulsion_group import PropulsionGroup
 from toa.models.true_airspeed_comp import TrueAirspeedCompGroundRoll
 
@@ -13,7 +12,7 @@ from toa.models.true_airspeed_comp import TrueAirspeedCompGroundRoll
 class GroundRollODE(om.Group):
     def initialize(self):
         self.options.declare('num_nodes', types=int, desc='Number of nodes to be evaluated in the RHS')
-        self.options.declare('airplane_data', types=AirplaneData, desc='Class containing all airplane data')
+        self.options.declare('airplane_data', types=Airplanes, desc='Class containing all airplane data')
 
     def setup(self):
         nn = self.options['num_nodes']
@@ -22,7 +21,7 @@ class GroundRollODE(om.Group):
         self.add_subsystem(name='tas_comp', subsys=TrueAirspeedCompGroundRoll(num_nodes=nn))
         self.connect('tas_comp.tas', ['aero.tas', 'prop.tas'])
 
-        self.add_subsystem(name='aero', subsys=AerodynamicsGroup(num_nodes=nn, airplane_data=airplane, phase='initial_run'),
+        self.add_subsystem(name='aero', subsys=AerodynamicsGroup(num_nodes=nn, airplane_data=airplane),
                            promotes_inputs=['alpha', 'de'], promotes_outputs=['L', 'D', 'M'])
 
         self.connect('L', 'ground_run_eom.lift')

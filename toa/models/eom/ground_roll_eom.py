@@ -3,7 +3,7 @@ import numpy as np
 import jax.numpy as jnp
 import openmdao.api as om
 
-from toa.data import AirplaneData
+from toa.data.airplanes.airplanes import Airplanes
 
 
 class GroundRollEOM(om.ExplicitComponent):
@@ -11,8 +11,7 @@ class GroundRollEOM(om.ExplicitComponent):
 
     def initialize(self):
         self.options.declare('num_nodes', types=int)
-        self.options.declare('airplane_data', types=AirplaneData,
-                             desc='Class containing all airplane data')
+        self.options.declare('airplane_data', types=Airplanes, desc='Class containing all airplane data')
         self._init_gradients()
 
     def _init_gradients(self):
@@ -45,14 +44,18 @@ class GroundRollEOM(om.ExplicitComponent):
         mu = 0.002
 
         weight = mass * grav
-        rf_nosewheel = (moment + thrust * airplane.zt + airplane.xm * (weight * jnp.cos(rw_slope) - lift)) / (airplane.xm - airplane.xn)
-        rf_mainwheel = (moment + thrust * airplane.zt + airplane.xn * (weight * jnp.cos(rw_slope) - lift)) / (airplane.xn - airplane.xm)
+        rf_nosewheel = (moment + thrust * airplane.engine.zpos + airplane.landing_gear.x_mg * (
+                    weight * jnp.cos(rw_slope) - lift)) / (
+                               airplane.landing_gear.x_mg - airplane.landing_gear.x_ng)
+        rf_mainwheel = (moment + thrust * airplane.engine.zpos + airplane.landing_gear.x_ng * (
+                    weight * jnp.cos(rw_slope) - lift)) / (
+                               airplane.landing_gear.x_ng - airplane.landing_gear.x_mg)
 
         f_rr = mu * (rf_nosewheel + rf_mainwheel)
 
         return {
             'dXdt:v': (thrust * jnp.cos(alpha) - drag - f_rr - weight * jnp.sin(
-                rw_slope)) / mass,
+                    rw_slope)) / mass,
             'dXdt:x': V,
             'rf_nosewheel': rf_nosewheel,
             'rf_mainwheel': rf_mainwheel

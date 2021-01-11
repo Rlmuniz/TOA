@@ -2,8 +2,8 @@ import openmdao.api as om
 import dymos as dm
 from dymos.models.atmosphere import USatm1976Comp
 import matplotlib.pyplot as plt
-from toa.data import b747
 
+from toa.data.airplanes.examples import b747
 from toa.ode.ground_roll import GroundRollODE
 from toa.ode.rotation import RotationODE
 
@@ -34,7 +34,7 @@ initial_run.add_state('V', fix_initial=True, fix_final=False, units='m/s',
 initial_run.add_state('x', fix_initial=True, fix_final=False, units='m',
                       rate_source='ground_run_eom.dXdt:x', lower=0, upper=3000)
 initial_run.add_state('mass', fix_initial=False, fix_final=False, units='kg',
-                      rate_source='prop.dXdt:mass_fuel', upper=396800, targets=['ground_run_eom.mass'])
+                      rate_source='prop.dXdt:mass_fuel', upper=396800, targets=['ground_run_eom.mass', 'aero.mass'])
 
 # Configure controls
 initial_run.add_control(name='de', units='deg', lower=-30.0, upper=30.0, targets=['de'])
@@ -67,7 +67,7 @@ rotation.add_state('q', fix_initial=True, fix_final=False, lower=0, units='deg/s
                    targets=['rotation_eom.q', 'aero.q'])
 rotation.add_state('alpha', fix_initial=False, fix_final=False, units='deg', rate_source='rotation_eom.dXdt:alpha',
                    targets=['alpha'], lower=-10, upper=20)
-rotation.add_state('mass', fix_initial=False, fix_final=False, units='kg', rate_source='prop.dXdt:mass_fuel',
+rotation.add_state('mass', fix_initial=False, fix_final=False, units='kg', rate_source='prop.dXdt:mass_fuel', targets=['aero.mass', 'rotation_eom.mass'],
                    upper=396800)
 
 # Configure controls
@@ -78,7 +78,9 @@ rotation.add_boundary_constraint('rotation_eom.rf_mainwheel', loc='final', const
                                  units='N', shape=(1,))
 
 # Connect external parameters
-traj.add_parameter('grav', targets={'ground_roll': ['ground_run_eom.grav'], 'rotation': ['rotation_eom.grav']},
+traj.add_parameter('flap_angle', targets={'ground_roll': ['aero.flap_angle'], 'rotation': ['aero.flap_angle']},
+                   shape=(1,), desc='Flap Angle', units='deg', opt=False, dynamic=False)
+traj.add_parameter('grav', targets={'ground_roll': ['ground_run_eom.grav', 'aero.grav'], 'rotation': ['rotation_eom.grav', 'aero.grav']},
                    shape=(1,), desc='Gravity acceleration', units='m/s**2', opt=False, dynamic=False)
 traj.add_parameter('elevation',
                    targets={'ground_roll': ['prop.fuel_flow.elevation'], 'rotation': ['prop.fuel_flow.elevation']},
@@ -98,20 +100,18 @@ traj.add_parameter('p_amb', targets={'ground_roll': ['prop.thrust_comp.p_amb'], 
 
 traj.link_phases(phases=['initial_run', 'rotation'], vars=['time', 'x', 'V', 'mass', 'alpha'])
 
-p.model.connect('external_params.elevation', 'traj.parameters:elevation')
+p.model.connect('external_params.elevation', ['atmo.h', 'traj.parameters:elevation'])
 p.model.connect('external_params.rw_slope', 'traj.parameters:rw_slope')
 
-#p.model.connect('atmo.rho', 'traj.parameters:rho')
-#p.model.connect('atmo.sos', 'traj.parameters:sos')
-#p.model.connect('atmo.pres', 'traj.parameters:p_amb')
+p.model.connect('atmo.rho', 'traj.parameters:rho')
+p.model.connect('atmo.sos', 'traj.parameters:sos')
+p.model.connect('atmo.pres', 'traj.parameters:p_amb')
 
 # Setup the problem
 p.setup(check=True)
 
+p.set_val('traj.parameters:flap_angle', 0.0)
 p.set_val('traj.parameters:grav', 9.80665)
-p.set_val('traj.parameters:rho', 1.225)
-p.set_val('traj.parameters:sos', 340)
-p.set_val('traj.parameters:p_amb', 101325.0)
 p.set_val('traj.parameters:Vw', 0.0)
 
 # Initial guesses
@@ -128,7 +128,7 @@ p.set_val('traj.rotation.states:x',
           rotation.interpolate(ys=[2400, 3000], nodes='state_input'),
           units='m')
 p.set_val('traj.rotation.states:V',
-          rotation.interpolate(ys=[100, 130], nodes='state_input'),
+          rotation.interpolate(ys=[100, 120], nodes='state_input'),
           units='m/s')
 p.set_val('traj.rotation.states:alpha',
           rotation.interpolate(ys=[0, 15], nodes='state_input'),

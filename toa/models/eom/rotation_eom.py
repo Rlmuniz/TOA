@@ -3,7 +3,7 @@ import numpy as np
 import jax.numpy as jnp
 import openmdao.api as om
 
-from toa.data import AirplaneData
+from toa.data.airplanes.airplanes import Airplanes
 
 
 class RotationEOM(om.ExplicitComponent):
@@ -11,7 +11,7 @@ class RotationEOM(om.ExplicitComponent):
 
     def initialize(self):
         self.options.declare('num_nodes', types=int)
-        self.options.declare('airplane_data', types=AirplaneData,
+        self.options.declare('airplane_data', types=Airplanes,
                              desc='Class containing all airplane data')
         self._init_gradients()
 
@@ -47,12 +47,12 @@ class RotationEOM(om.ExplicitComponent):
 
         rf_mainwheel = weight * jnp.cos(rw_slope) - lift
         f_rr = mu * rf_mainwheel
-        m_mainwheel = airplane.xm * rf_mainwheel
+        m_mainwheel = airplane.landing_gear.x_mg * rf_mainwheel
 
         return {
             'dXdt:v': (thrust * jnp.cos(alpha) - drag - f_rr - weight * jnp.sin(rw_slope)) / mass,
             'dXdt:x': V,
-            'dXdt:q': (moment + m_mainwheel) / airplane.Iy,
+            'dXdt:q': (moment + m_mainwheel) / airplane.inertia.Iy,
             'dXdt:alpha': q,
             'rf_mainwheel': rf_mainwheel
         }

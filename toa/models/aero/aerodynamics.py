@@ -14,7 +14,7 @@ Outputs:
 
 import openmdao.api as om
 
-from toa.data import AirplaneData
+from toa.data.airplanes.airplanes import Airplanes
 from toa.models.aero.aero_forces_comp import AeroForcesComp
 from toa.models.aero.coeff.aero_coef import AerodynamicsCoefficientsGroup
 from toa.models.aero.dynamic_pressure_comp import DynamicPressureComp
@@ -25,7 +25,7 @@ class AerodynamicsGroup(om.Group):
 
     def initialize(self):
         self.options.declare('num_nodes', types=int)
-        self.options.declare('airplane_data', types=AirplaneData, desc='Class containing all airplane data')
+        self.options.declare('airplane_data', types=Airplanes, desc='Class containing all airplane data')
         self.options.declare('landing_gear', default=True, desc='Accounts landing gear drag')
         self.options.declare('AllWheelsOnGround', default=True)
 
@@ -35,13 +35,22 @@ class AerodynamicsGroup(om.Group):
         landing_gear = self.options['landing_gear']
         all_wheels_on_ground = self.options['AllWheelsOnGround']
 
-        self.add_subsystem(name='coeff_comp',
-                           subsys=AerodynamicsCoefficientsGroup(num_nodes=nn,
-                                                                airplane_data=airplane,
-                                                                landing_gear=landing_gear,
-                                                                AllWheelsOnGround=all_wheels_on_ground),
-                           promotes_inputs=['alpha', 'de', 'flap_angle'],
-                           promotes_outputs=['CL', 'CD', 'Cm'])
+        if all_wheels_on_ground:
+            self.add_subsystem(name='coeff_comp',
+                               subsys=AerodynamicsCoefficientsGroup(num_nodes=nn,
+                                                                    airplane_data=airplane,
+                                                                    landing_gear=landing_gear,
+                                                                    AllWheelsOnGround=all_wheels_on_ground),
+                               promotes_inputs=['alpha', 'de', 'flap_angle', 'mass', 'grav'],
+                               promotes_outputs=['CL', 'CD', 'Cm'])
+        else:
+            self.add_subsystem(name='coeff_comp',
+                               subsys=AerodynamicsCoefficientsGroup(num_nodes=nn,
+                                                                    airplane_data=airplane,
+                                                                    landing_gear=landing_gear,
+                                                                    AllWheelsOnGround=all_wheels_on_ground),
+                               promotes_inputs=['alpha', 'de', 'flap_angle', 'mass', 'grav', 'q', 'tas'],
+                               promotes_outputs=['CL', 'CD', 'Cm'])
 
         self.add_subsystem(name='dyn_press',
                            subsys=DynamicPressureComp(num_nodes=nn),

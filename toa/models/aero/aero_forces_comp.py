@@ -1,13 +1,14 @@
 import numpy as np
 import openmdao.api as om
-from toa.data import AirplaneData
+
+from toa.data.airplanes.airplanes import Airplanes
 
 
 class AeroForcesComp(om.ExplicitComponent):
 
     def initialize(self):
         self.options.declare('num_nodes', types=int)
-        self.options.declare('airplane_data', types=AirplaneData,
+        self.options.declare('airplane_data', types=Airplanes,
                              desc='Class containing all airplane data')
 
     def setup(self):
@@ -43,7 +44,7 @@ class AeroForcesComp(om.ExplicitComponent):
 
     def compute(self, inputs, outputs, **kwargs):
         airplane = self.options['airplane_data']
-        qS = inputs['qbar'] * airplane.S
+        qS = inputs['qbar'] * airplane.wing.area
 
         outputs['L'] = qS * inputs['CL']
         outputs['D'] = qS * inputs['CD']
@@ -51,7 +52,7 @@ class AeroForcesComp(om.ExplicitComponent):
 
     def compute_partials(self, inputs, partials, **kwargs):
         airplane = self.options['airplane_data']
-        qS = inputs['qbar'] * airplane.S
+        qS = inputs['qbar'] * airplane.wing.area
 
         partials['L', 'CL'] = qS
         partials['L', 'qbar'] = airplane.S * inputs['CL']

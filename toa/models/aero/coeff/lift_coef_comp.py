@@ -1,13 +1,14 @@
 import numpy as np
 import openmdao.api as om
-from toa.data import AirplaneData
+
+from toa.data.airplanes.airplanes import Airplanes
 
 
 class LiftCoeffAllWheelsOnGroundComp(om.ExplicitComponent):
 
     def initialize(self):
         self.options.declare('num_nodes', types=int)
-        self.options.declare('airplane_data', types=AirplaneData, desc='Class containing all airplane data')
+        self.options.declare('airplane_data', types=Airplanes, desc='Class containing all airplane data')
 
     def setup(self):
         nn = self.options['num_nodes']
@@ -38,7 +39,7 @@ class LiftCoeffComp(om.ExplicitComponent):
 
     def initialize(self):
         self.options.declare('num_nodes', types=int)
-        self.options.declare('airplane_data', types=AirplaneData, desc='Class containing all airplane data')
+        self.options.declare('airplane_data', types=Airplanes, desc='Class containing all airplane data')
 
     def setup(self):
         nn = self.options['num_nodes']

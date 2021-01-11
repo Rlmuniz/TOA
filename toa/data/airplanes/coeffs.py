@@ -9,4 +9,5 @@ class AerodynamicCoefficients:
     CLq: float
     Cm0: float
     Cmalpha: float
+    Cmde: float
     Cmq: float

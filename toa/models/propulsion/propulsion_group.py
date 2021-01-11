@@ -12,7 +12,7 @@ Inputs:
 
 import openmdao.api as om
 
-from toa.data import AirplaneData
+from toa.data.airplanes.airplanes import Airplanes
 from toa.models.propulsion.fuel_flow_comp import FuelFlowComp
 from toa.models.propulsion.mach_comp import MachComp
 from toa.models.propulsion.thrust_comp import ThrustComp
@@ -27,7 +27,7 @@ class PropulsionGroup(om.Group):
                              desc='Takeoff condition (AEO/OEI)')
         self.options.declare('thrust_rating', default='takeoff',
                              desc='Thrust rate (takeoff, idle)')
-        self.options.declare('airplane_data', types=AirplaneData,
+        self.options.declare('airplane_data', types=Airplanes,
                              desc='Class containing all airplane data')
 
     def setup(self):

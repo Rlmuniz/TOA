@@ -1,32 +1,14 @@
-from dataclasses import dataclass, field
+from dataclasses import dataclass
+from dataclasses import field
 from math import sqrt
 
 
 @dataclass(frozen=False)
-class AirplaneData:
-    wingspan: float
-    cbar: float
-    Iy: float
-
-    xn: float
-    xm: float
-    zmn: float
-    zt: float
-    S: float
-
-    # Coefficients
-    CL0: float
-    CLa: float
-    CLde: float
-    CLq: float
-    Cm0: float
-    Cma: float
-    Cmde: float
-    Cmq: float
-
-    ## Engine
+class Engines:
     max_thrust_sl: float
     bypass_ratio: float
+    zpos: float
+    mount: str
     num_motors: int
     cff1: float
     cff2: float
