@@ -1,3 +1,4 @@
+import jax
 import numpy as np
 import openmdao.api as om
 
@@ -10,6 +11,38 @@ class DragCoeffComp(om.ExplicitComponent):
         self.options.declare('num_nodes', types=int)
         self.options.declare('airplane_data', types=Airplanes, desc='Class containing all airplane data')
         self.options.declare('landing_gear', default=True, desc='Accounts landing gear drag')
+        self._init_gradients()
+
+    def _init_gradients(self):
+        """Generates function gradients for component."""
+        argnums = (0, 1, 2, 3)
+        in_axes = (0, 0, None, None)
+
+        self.grad_func = jax.vmap(jax.grad(self._compute, argnums), in_axes=in_axes)
+
+    def _grad(self, mass, CL, flap_angle, grav):
+        return self._compute(mass, CL, flap_angle, grav)
+
+    def _compute(self, mass, CL, flap_angle, grav):
+        airplane = self.options['airplane_data']
+
+        delta_cd_flap = airplane.flap.lambda_f * airplane.flap.cfc ** 1.38 * airplane.flap.sfs * np.sin(flap_angle) ** 2
+
+        if self.options['landing_gear']:
+            delta_cd_gear = (mass * grav) / airplane.wing.area * 3.16e-5 * airplane.limits.MTOW ** (-0.215)
+        else:
+            delta_cd_gear = 0
+
+        CD0_total = airplane.polar.CD0 + delta_cd_gear + delta_cd_flap
+
+        if airplane.engine.mount == 'rear':
+            delta_e_flap = 0.0046 * flap_angle
+        else:
+            delta_e_flap = 0.0026 * flap_angle
+
+        k_total = 1 / (1 / airplane.polar.k + np.pi * airplane.aspect_ratio * delta_e_flap)
+
+        return CD0_total * k_total * CL ** 2
 
     def setup(self):
         nn = self.options['num_nodes']
@@ -26,32 +59,26 @@ class DragCoeffComp(om.ExplicitComponent):
         ar = np.arange(nn)
         zz = np.zeros(nn)
 
-        self.declare_partials(of='CD', wrt='flap_angle', rows=ar, cols=zz, method='fd', form='central', step=1e-4)
-        self.declare_partials(of='CD', wrt='CL', rows=ar, cols=ar, method='fd', form='central', step=1e-4)
-        self.declare_partials(of='CD', wrt='mass', rows=ar, cols=ar, method='fd', form='central', step=1e-4)
-        self.declare_partials(of='CD', wrt='grav', rows=ar, cols=zz, method='fd', form='central', step=1e-4)
+        self.declare_partials(of='CD', wrt='flap_angle', rows=ar, cols=zz)
+        self.declare_partials(of='CD', wrt='CL', rows=ar, cols=ar)
+        self.declare_partials(of='CD', wrt='mass', rows=ar, cols=ar)
+        self.declare_partials(of='CD', wrt='grav', rows=ar, cols=zz)
 
     def compute(self, inputs, outputs, **kwargs):
-        airplane = self.options['airplane_data']
         flap_angle = inputs['flap_angle']
         CL = inputs['CL']
         mass = inputs['mass']
         grav = inputs['grav']
 
-        delta_cd_flap = airplane.flap.lambda_f * airplane.flap.cfc ** 1.38 * airplane.flap.sfs * np.sin(flap_angle) ** 2
+        outputs['CD'] = self._compute(mass, CL, flap_angle, grav)
 
-        if self.options['landing_gear']:
-            delta_cd_gear = (mass * grav) / airplane.wing.area * 3.16e-5 * airplane.limits.MTOW ** (-0.215)
-        else:
-            delta_cd_gear = 0
+    def compute_partials(self, inputs, partials, **kwargs):
+        flap_angle = inputs['flap_angle']
+        CL = inputs['CL']
+        mass = inputs['mass']
+        grav = inputs['grav']
 
-        CD0_total = airplane.polar.CD0 + delta_cd_gear + delta_cd_gear
-
-        if airplane.engine.mount == 'rear':
-            delta_e_flap = 0.0046 * flap_angle
-        else:
-            delta_e_flap = 0.0026 * flap_angle
-
-        k_total = 1 / (1 / airplane.polar.k + np.pi * airplane.aspect_ratio * delta_e_flap)
-
-        outputs['CD'] = CD0_total * k_total * CL ** 2
+        wrt = 'mass', 'CL', 'flap_angle', 'grav'
+        args = mass, CL, flap_angle, grav
+        for _wrt, res in zip(wrt, self.grad_func(*args)):
+            partials['CD', _wrt] = np.asarray(res, float)
