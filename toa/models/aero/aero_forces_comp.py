@@ -48,17 +48,18 @@ class AeroForcesComp(om.ExplicitComponent):
 
         outputs['L'] = qS * inputs['CL']
         outputs['D'] = qS * inputs['CD']
-        outputs['M'] = qS * airplane.cbar * inputs['Cm']
+        outputs['M'] = qS * airplane.wing.mac * inputs['Cm']
 
     def compute_partials(self, inputs, partials, **kwargs):
         airplane = self.options['airplane_data']
-        qS = inputs['qbar'] * airplane.wing.area
+        S = airplane.wing.area
+        qS = inputs['qbar'] * S
 
         partials['L', 'CL'] = qS
-        partials['L', 'qbar'] = airplane.S * inputs['CL']
+        partials['L', 'qbar'] = S * inputs['CL']
 
         partials['D', 'CD'] = qS
-        partials['D', 'qbar'] = airplane.S * inputs['CD']
+        partials['D', 'qbar'] = S * inputs['CD']
 
-        partials['M', 'Cm'] = qS * airplane.cbar
-        partials['M', 'qbar'] = airplane.cbar * airplane.S * inputs['Cm']
+        partials['M', 'Cm'] = qS * airplane.wing.mac
+        partials['M', 'qbar'] = airplane.wing.mac * S * inputs['Cm']

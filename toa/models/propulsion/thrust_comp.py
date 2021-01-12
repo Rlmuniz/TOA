@@ -13,6 +13,7 @@ class ThrustComp(om.ExplicitComponent):
         self.options.declare('condition', default='AEO', desc='Takeoff condition (AEO/OEI)')
         self.options.declare('thrust_rating', default='takeoff', desc='Thrust rate (takeoff, idle)')
         self.options.declare('airplane_data', types=Airplanes, desc='Class containing all airplane data')
+        self._init_gradients()
 
     def _init_gradients(self):
         """Generates function gradients for component."""
@@ -75,14 +76,14 @@ class ThrustComp(om.ExplicitComponent):
         self.declare_partials(of='thrust', wrt='mach', rows=ar, cols=ar)
 
     def compute(self, inputs, outputs, **kwargs):
-        p_amb = inputs['p_amb']
+        p_amb, = inputs['p_amb']
         mach = inputs['mach']
 
         for out, res in self._compute(mach, p_amb).items():
             outputs[out] = res
 
     def compute_partials(self, inputs, partials, *kwargs):
-        p_amb = inputs['p_amb']
+        p_amb, = inputs['p_amb']
         mach = inputs['mach']
 
         wrt = 'mach', 'p_amb'

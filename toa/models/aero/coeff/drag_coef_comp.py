@@ -1,4 +1,5 @@
 import jax
+import jax.numpy as jnp
 import numpy as np
 import openmdao.api as om
 
@@ -20,13 +21,10 @@ class DragCoeffComp(om.ExplicitComponent):
 
         self.grad_func = jax.vmap(jax.grad(self._compute, argnums), in_axes=in_axes)
 
-    def _grad(self, mass, CL, flap_angle, grav):
-        return self._compute(mass, CL, flap_angle, grav)
-
     def _compute(self, mass, CL, flap_angle, grav):
         airplane = self.options['airplane_data']
 
-        delta_cd_flap = airplane.flap.lambda_f * airplane.flap.cfc ** 1.38 * airplane.flap.sfs * np.sin(flap_angle) ** 2
+        delta_cd_flap = airplane.flap.lambda_f * airplane.flap.cf_c ** 1.38 * airplane.flap.sf_s * jnp.sin(flap_angle) ** 2
 
         if self.options['landing_gear']:
             delta_cd_gear = (mass * grav) / airplane.wing.area * 3.16e-5 * airplane.limits.MTOW ** (-0.215)
@@ -40,7 +38,7 @@ class DragCoeffComp(om.ExplicitComponent):
         else:
             delta_e_flap = 0.0026 * flap_angle
 
-        k_total = 1 / (1 / airplane.polar.k + np.pi * airplane.aspect_ratio * delta_e_flap)
+        k_total = 1 / (1 / airplane.polar.k + np.pi * airplane.wing.aspect_ratio * delta_e_flap)
 
         return CD0_total * k_total * CL ** 2
 
@@ -65,18 +63,18 @@ class DragCoeffComp(om.ExplicitComponent):
         self.declare_partials(of='CD', wrt='grav', rows=ar, cols=zz)
 
     def compute(self, inputs, outputs, **kwargs):
-        flap_angle = inputs['flap_angle']
+        flap_angle, = inputs['flap_angle']
         CL = inputs['CL']
         mass = inputs['mass']
-        grav = inputs['grav']
+        grav, = inputs['grav']
 
         outputs['CD'] = self._compute(mass, CL, flap_angle, grav)
 
     def compute_partials(self, inputs, partials, **kwargs):
-        flap_angle = inputs['flap_angle']
+        flap_angle, = inputs['flap_angle']
         CL = inputs['CL']
         mass = inputs['mass']
-        grav = inputs['grav']
+        grav, = inputs['grav']
 
         wrt = 'mass', 'CL', 'flap_angle', 'grav'
         args = mass, CL, flap_angle, grav

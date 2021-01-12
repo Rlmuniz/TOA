@@ -69,7 +69,7 @@ class MomentCoeffComp(om.ExplicitComponent):
         q = inputs['q']
         tas = inputs['tas']
 
-        qhat = q * airplane.wings.mac / (2 * tas)
+        qhat = q * airplane.wing.mac / (2 * tas)
 
         outputs['Cm'] = (
                 airplane.coeffs.Cm0
@@ -85,5 +85,5 @@ class MomentCoeffComp(om.ExplicitComponent):
 
         partials['Cm', 'alpha'] = airplane.coeffs.Cmalpha
         partials['Cm', 'de'] = airplane.coeffs.Cmde
-        partials['Cm', 'q'] = airplane.coeffs.Cmq * airplane.wings.mac / (2 * tas)
-        partials['Cm', 'tas'] = - airplane.coeffs.Cmq * q * airplane.wings.mac / (2 * tas ** 2)
+        partials['Cm', 'q'] = airplane.coeffs.Cmq * airplane.wing.mac / (2 * tas)
+        partials['Cm', 'tas'] = - airplane.coeffs.Cmq * q * airplane.wing.mac / (2 * tas ** 2)

@@ -34,7 +34,7 @@ initial_run.add_state('V', fix_initial=True, fix_final=False, units='m/s',
 initial_run.add_state('x', fix_initial=True, fix_final=False, units='m',
                       rate_source='ground_run_eom.dXdt:x', lower=0, upper=3000)
 initial_run.add_state('mass', fix_initial=False, fix_final=False, units='kg',
-                      rate_source='prop.dXdt:mass_fuel', upper=396800, targets=['ground_run_eom.mass', 'aero.mass'])
+                      rate_source='prop.dXdt:mass_fuel', lower=0, upper=396800, targets=['ground_run_eom.mass', 'aero.mass'])
 
 # Configure controls
 initial_run.add_control(name='de', units='deg', lower=-30.0, upper=30.0, targets=['de'])
@@ -43,12 +43,16 @@ initial_run.add_control(name='de', units='deg', lower=-30.0, upper=30.0, targets
 initial_run.add_path_constraint('ground_run_eom.rf_mainwheel', lower=0, units='N')
 initial_run.add_path_constraint('ground_run_eom.rf_nosewheel', lower=0, units='N')
 initial_run.add_boundary_constraint('ground_run_eom.rf_nosewheel', loc='final', constraint_name='final_F_ALG',
-                                    upper=0.01, units='N', shape=(1,))
+                                    equals=0.01, units='N', shape=(1,))
 
 # Configure phase parameters
 initial_run.add_parameter('alpha', targets=['alpha'], units='deg', opt=True, lower=-5.0, upper=0.0, dynamic=False)
 
 initial_run.add_objective('mass', loc='initial', scaler=-1)
+
+initial_run.add_timeseries_output('thrust')
+initial_run.add_timeseries_output('L')
+initial_run.add_timeseries_output('D')
 
 # Rotation
 transcription1 = dm.GaussLobatto(num_segments=10, order=3)
@@ -74,9 +78,12 @@ rotation.add_state('mass', fix_initial=False, fix_final=False, units='kg', rate_
 rotation.add_control(name='de', units='deg', lower=-30.0, upper=30.0, targets=['de'])
 
 rotation.add_path_constraint('rotation_eom.rf_mainwheel', lower=0, units='N')
-rotation.add_boundary_constraint('rotation_eom.rf_mainwheel', loc='final', constraint_name='final_F_MLG', upper=0.01,
+rotation.add_boundary_constraint('rotation_eom.rf_mainwheel', loc='final', constraint_name='final_F_MLG', equals=0.01,
                                  units='N', shape=(1,))
 
+rotation.add_timeseries_output('thrust')
+rotation.add_timeseries_output('L')
+rotation.add_timeseries_output('D')
 # Connect external parameters
 traj.add_parameter('flap_angle', targets={'ground_roll': ['aero.flap_angle'], 'rotation': ['aero.flap_angle']},
                    shape=(1,), desc='Flap Angle', units='deg', opt=False, dynamic=False)
@@ -145,22 +152,77 @@ p.set_val('traj.rotation.t_duration', 10.0)
 p.run_driver()
 
 plt.figure(0)
-plt.clf();
-plt.plot(p.get_val('traj.ground_roll.timeseries.time'),
-         p.get_val('traj.ground_roll.timeseries.states:x'), '.-',
+plt.plot(p.get_val('traj.initial_run.timeseries.time'),
+         p.get_val('traj.initial_run.timeseries.states:x'), '.-',
          p.get_val('traj.rotation.timeseries.time'),
          p.get_val('traj.rotation.timeseries.states:x'), '.-')
 plt.title('position')
-plt.show()
+plt.grid()
 
 plt.figure(1)
-plt.clf();
-plt.plot(p.get_val('traj.ground_roll.timeseries.time'),
-         p.get_val('traj.ground_roll.timeseries.mlg_reaction'), '.-',
+plt.plot(p.get_val('traj.initial_run.timeseries.time'),
+         p.get_val('traj.initial_run.timeseries.rf_mainwheel', units='kN'), '.-',
          p.get_val('traj.rotation.timeseries.time'),
-         p.get_val('traj.rotation.timeseries.mlg_reaction'), '.-',
-         p.get_val('traj.ground_roll.timeseries.time'),
-         p.get_val('traj.ground_roll.timeseries.nlg_reaction'), '.-')
+         p.get_val('traj.rotation.timeseries.rf_mainwheel', units='kN'), '.-',
+         p.get_val('traj.initial_run.timeseries.time'),
+         p.get_val('traj.initial_run.timeseries.rf_nosewheel', units='kN'), '.-')
 plt.title('Landing gear forces')
+plt.grid()
+
+
+plt.figure(2)
+plt.plot(p.get_val('traj.initial_run.timeseries.time'),
+         p.get_val('traj.initial_run.timeseries.controls:de', units='deg'), '.-',
+         p.get_val('traj.rotation.timeseries.time'),
+         p.get_val('traj.rotation.timeseries.controls:de', units='deg'), '.-')
+plt.title('Elevator deflection')
+plt.grid()
+
+plt.figure(3)
+plt.plot(p.get_val('traj.initial_run.timeseries.time'),
+         p.get_val('traj.initial_run.timeseries.states:V', units='kn'), '.-',
+         p.get_val('traj.rotation.timeseries.time'),
+         p.get_val('traj.rotation.timeseries.states:V', units='kn'), '.-')
+plt.title('V')
+plt.grid()
+
+plt.figure(4)
+plt.plot(p.get_val('traj.rotation.timeseries.time'),
+         p.get_val('traj.rotation.timeseries.states:alpha', units='deg'), '.-')
+plt.title('Angle of Attack')
+plt.grid()
+
+plt.figure(5)
+plt.plot(p.get_val('traj.rotation.timeseries.time'),
+         p.get_val('traj.rotation.timeseries.states:q', units='deg/s'), '.-')
+plt.title('Pitch rate')
+plt.grid()
+
+plt.figure(6)
+plt.plot(p.get_val('traj.initial_run.timeseries.time'),
+         p.get_val('traj.initial_run.timeseries.thrust', units='kN'), '.-',
+         p.get_val('traj.rotation.timeseries.time'),
+         p.get_val('traj.rotation.timeseries.thrust', units='kN'), '.-')
+plt.title('Thrust')
+plt.grid()
+
+plt.figure(7)
+plt.plot(p.get_val('traj.initial_run.timeseries.time'),
+         p.get_val('traj.initial_run.timeseries.D', units='kN'), '.-',
+         p.get_val('traj.rotation.timeseries.time'),
+         p.get_val('traj.rotation.timeseries.D', units='kN'), '.-',
+         p.get_val('traj.initial_run.timeseries.time'),
+         p.get_val('traj.initial_run.timeseries.L', units='kN'),
+         p.get_val('traj.rotation.timeseries.time'),
+         p.get_val('traj.rotation.timeseries.L', units='kN'))
+plt.title('Forces')
+plt.grid()
+
+plt.figure(8)
+plt.plot(p.get_val('traj.initial_run.timeseries.time'),
+         p.get_val('traj.initial_run.timeseries.states:mass', units='kg'), '.-',
+         p.get_val('traj.rotation.timeseries.time'),
+         p.get_val('traj.rotation.timeseries.states:mass', units='kg'), '.-')
+plt.title('mass')
 plt.grid()
 plt.show()

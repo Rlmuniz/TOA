@@ -69,7 +69,7 @@ class LiftCoeffComp(om.ExplicitComponent):
         q = inputs['q']
         tas = inputs['tas']
 
-        qhat = q * airplane.wings.mac / (2 * tas)
+        qhat = q * airplane.wing.mac / (2 * tas)
 
         outputs['CL'] = (
                 airplane.coeffs.CL0
@@ -85,5 +85,5 @@ class LiftCoeffComp(om.ExplicitComponent):
 
         partials['CL', 'alpha'] = airplane.coeffs.CLalpha
         partials['CL', 'de'] = airplane.coeffs.CLde
-        partials['CL', 'q'] = airplane.coeffs.CLq * airplane.wings.mac / (2 * tas)
-        partials['CL', 'tas'] = - airplane.coeffs.CLq * q * airplane.wings.mac / (2 * tas ** 2)
+        partials['CL', 'q'] = airplane.coeffs.CLq * airplane.wing.mac / (2 * tas)
+        partials['CL', 'tas'] = - airplane.coeffs.CLq * q * airplane.wing.mac / (2 * tas ** 2)
