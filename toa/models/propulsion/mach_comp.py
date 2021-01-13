@@ -29,4 +29,4 @@ class MachComp(om.ExplicitComponent):
 
     def compute_partials(self, inputs, partials, **kwargs):
         partials['mach', 'sos'] = -inputs['tas'] / inputs['sos'] ** 2
-        partials['mach', 'tas'] = 1 / inputs['sos']
+        partials['mach', 'tas'] = 1.0 / inputs['sos']
