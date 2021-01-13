@@ -39,6 +39,7 @@ class ThrustComp(om.ExplicitComponent):
         p_amb_sl = 101325.0
 
         press_ratio = p_amb / p_amb_sl
+
         A = - 0.4327 * press_ratio ** 2 + 1.3855 * press_ratio + 0.0472
         Z = 0.9106 * press_ratio ** 3 - 1.7736 * press_ratio ** 2 + 1.8697 * press_ratio
         X = 0.1377 * press_ratio ** 3 - 0.4374 * press_ratio ** 2 + 1.3003 * press_ratio
