@@ -1,4 +1,5 @@
 import openmdao.api as om
+from dymos.models.atmosphere import USatm1976Comp
 
 from toa.data.airplanes.airplanes import Airplanes
 from toa.models.aero.aerodynamics import AerodynamicsGroup
@@ -16,20 +17,32 @@ class RotationODE(om.Group):
         nn = self.options['num_nodes']
         airplane = self.options['airplane_data']
 
+        assumptions = self.add_subsystem(name='assumptions', subsys=om.IndepVarComp())
+        assumptions.add_output('grav', val=9.80665, units='m/s**2', desc='Gravity acceleration')
+
+        self.add_subsystem(name='atmos', subsys=USatm1976Comp(num_nodes=1), promotes_inputs=['h'])
+
         self.add_subsystem(name='tas_comp', subsys=TrueAirspeedCompGroundRoll(num_nodes=nn))
-        self.connect('tas_comp.tas', ['aero.tas', 'prop.tas'])
 
         self.add_subsystem(name='aero', subsys=AerodynamicsGroup(num_nodes=nn,
                                                                  airplane_data=airplane,
                                                                  AllWheelsOnGround=False),
                            promotes_inputs=['alpha', 'de'], promotes_outputs=['L', 'D', 'M'])
 
-        self.connect('L', 'rotation_eom.lift')
-        self.connect('D', 'rotation_eom.drag')
-        self.connect('M', 'rotation_eom.moment')
+        self.connect('assumptions.grav', 'aero.grav')
+        self.connect('atmos.rho', 'aero.rho')
 
         self.add_subsystem(name='prop', subsys=PropulsionGroup(num_nodes=nn, airplane_data=airplane),
                            promotes_outputs=['thrust'])
 
+        self.connect('atmos.sos', 'prop.sos')
+        self.connect('atmos.pres', 'prop.thrust_comp.p_amb')
+        self.connect('tas_comp.tas', ['aero.tas', 'prop.tas'])
+
         self.add_subsystem(name='rotation_eom', subsys=RotationEOM(num_nodes=nn, airplane_data=airplane),
                            promotes_inputs=['alpha', 'thrust'])
+
+        self.connect('assumptions.grav', 'rotation_eom.grav')
+        self.connect('L', 'rotation_eom.lift')
+        self.connect('D', 'rotation_eom.drag')
+        self.connect('M', 'rotation_eom.moment')

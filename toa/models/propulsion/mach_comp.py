@@ -25,7 +25,6 @@ class MachComp(om.ExplicitComponent):
         self.declare_partials(of='mach', wrt='sos', rows=ar, cols=zz)
 
     def compute(self, inputs, outputs, **kwargs):
-        print(inputs['tas'])
         outputs['mach'] = inputs['tas'] / inputs['sos']
 
     def compute_partials(self, inputs, partials, **kwargs):

@@ -53,7 +53,6 @@ class MomentCoeffComp(om.ExplicitComponent):
         self.add_output(name='Cm', val=zeros, desc='Moment coefficient', units=None)
 
     def setup_partials(self):
-        airplane = self.options['airplane_data']
         nn = self.options['num_nodes']
         ar = np.arange(nn)
 

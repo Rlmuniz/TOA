@@ -2,7 +2,7 @@ import jax
 import jax.numpy as jnp
 import numpy as np
 import openmdao.api as om
-
+from scipy.constants import degree
 from toa.data.airplanes.airplanes import Airplanes
 
 
@@ -34,9 +34,9 @@ class DragCoeffComp(om.ExplicitComponent):
         CD0_total = airplane.polar.CD0 + delta_cd_gear + delta_cd_flap
 
         if airplane.engine.mount == 'rear':
-            delta_e_flap = 0.0046 * flap_angle
+            delta_e_flap = 0.0046 * flap_angle / degree
         else:
-            delta_e_flap = 0.0026 * flap_angle
+            delta_e_flap = 0.0026 * flap_angle / degree
 
         k_total = 1 / (1 / airplane.polar.k + np.pi * airplane.wing.aspect_ratio * delta_e_flap)
 

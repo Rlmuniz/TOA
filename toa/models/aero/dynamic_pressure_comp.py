@@ -27,7 +27,6 @@ class DynamicPressureComp(om.ExplicitComponent):
         self.declare_partials(of='qbar', wrt='tas', rows=ar, cols=ar)
 
     def compute(self, inputs, outputs, **kwargs):
-        print(f"Inner function rho: {inputs['rho']}")
         outputs['qbar'] = 0.5 * inputs['rho'] * inputs['tas'] ** 2
 
     def compute_partials(self, inputs, partials, **kwargs):

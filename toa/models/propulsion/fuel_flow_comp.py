@@ -32,7 +32,7 @@ class FuelFlowComp(om.ExplicitComponent):
         mass_fuel_eng = airplane.engine.cff3 * thrust_ratio ** 3 + airplane.engine.cff2 * thrust_ratio ** 2 + airplane.engine.cff1 * thrust_ratio + 6.7e-7 * (
                 ength / 1000) * elevation
 
-        return mass_fuel_eng * num_motors
+        return -1 * mass_fuel_eng * num_motors
 
     def setup(self):
         nn = self.options['num_nodes']

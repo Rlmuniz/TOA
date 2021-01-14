@@ -44,18 +44,15 @@ class GroundRollEOM(om.ExplicitComponent):
         mu = 0.002
 
         weight = mass * grav
-        rf_nosewheel = (moment + thrust * airplane.engine.zpos + airplane.landing_gear.x_mg * (
-                    weight * jnp.cos(rw_slope) - lift)) / (
+        rf_nosewheel = (moment + airplane.landing_gear.x_mg * (weight * jnp.cos(rw_slope) - lift)) / (
                                airplane.landing_gear.x_mg - airplane.landing_gear.x_ng)
-        rf_mainwheel = (moment + thrust * airplane.engine.zpos + airplane.landing_gear.x_ng * (
-                    weight * jnp.cos(rw_slope) - lift)) / (
+        rf_mainwheel = (moment + airplane.landing_gear.x_ng * (weight * jnp.cos(rw_slope) - lift)) / (
                                airplane.landing_gear.x_ng - airplane.landing_gear.x_mg)
 
         f_rr = mu * (rf_nosewheel + rf_mainwheel)
 
         return {
-            'dXdt:v': (thrust * jnp.cos(alpha) - drag - f_rr - weight * jnp.sin(
-                    rw_slope)) / mass,
+            'dXdt:v': (thrust * jnp.cos(alpha) - drag - f_rr - weight * jnp.sin(rw_slope)) / mass,
             'dXdt:x': V,
             'rf_nosewheel': rf_nosewheel,
             'rf_mainwheel': rf_mainwheel
@@ -93,11 +90,11 @@ class GroundRollEOM(om.ExplicitComponent):
         self.declare_partials(of='dXdt:v', wrt='moment', rows=ar, cols=ar)
         self.declare_partials(of='dXdt:v', wrt='V', rows=ar, cols=ar)
         self.declare_partials(of='dXdt:v', wrt='mass', rows=ar, cols=ar)
-        self.declare_partials(of='dXdt:v', wrt='grav', rows=ar, cols=zz)
         self.declare_partials(of='dXdt:v', wrt='rw_slope', rows=ar, cols=zz)
+        self.declare_partials(of='dXdt:v', wrt='grav', rows=ar, cols=zz)
         self.declare_partials(of='dXdt:v', wrt='alpha', rows=ar, cols=zz)
 
-        self.declare_partials(of='dXdt:x', wrt='V', rows=ar, cols=ar, val=ones)
+        self.declare_partials(of='dXdt:x', wrt='V', rows=ar, cols=ar, val=1.*ones)
 
         self.declare_partials(of='rf_nosewheel', wrt='thrust', rows=ar, cols=ar)
         self.declare_partials(of='rf_nosewheel', wrt='lift', rows=ar, cols=ar)
@@ -105,8 +102,8 @@ class GroundRollEOM(om.ExplicitComponent):
         self.declare_partials(of='rf_nosewheel', wrt='moment', rows=ar, cols=ar)
         self.declare_partials(of='rf_nosewheel', wrt='V', rows=ar, cols=ar)
         self.declare_partials(of='rf_nosewheel', wrt='mass', rows=ar, cols=ar)
-        self.declare_partials(of='rf_nosewheel', wrt='grav', rows=ar, cols=zz)
         self.declare_partials(of='rf_nosewheel', wrt='rw_slope', rows=ar, cols=zz)
+        self.declare_partials(of='rf_nosewheel', wrt='grav', rows=ar, cols=zz)
         self.declare_partials(of='rf_nosewheel', wrt='alpha', rows=ar, cols=zz)
 
         self.declare_partials(of='rf_mainwheel', wrt='thrust', rows=ar, cols=ar)
@@ -115,8 +112,8 @@ class GroundRollEOM(om.ExplicitComponent):
         self.declare_partials(of='rf_mainwheel', wrt='moment', rows=ar, cols=ar)
         self.declare_partials(of='rf_mainwheel', wrt='V', rows=ar, cols=ar)
         self.declare_partials(of='rf_mainwheel', wrt='mass', rows=ar, cols=ar)
-        self.declare_partials(of='rf_mainwheel', wrt='grav', rows=ar, cols=zz)
         self.declare_partials(of='rf_mainwheel', wrt='rw_slope', rows=ar, cols=zz)
+        self.declare_partials(of='rf_mainwheel', wrt='grav', rows=ar, cols=zz)
         self.declare_partials(of='rf_mainwheel', wrt='alpha', rows=ar, cols=zz)
 
     def compute(self, inputs, outputs, **kwargs):

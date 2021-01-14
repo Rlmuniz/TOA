@@ -11,7 +11,7 @@ class ThrustComp(om.ExplicitComponent):
     def initialize(self):
         self.options.declare('num_nodes', types=int)
         self.options.declare('condition', default='AEO', desc='Takeoff condition (AEO/OEI)')
-        self.options.declare('thrust_rating', default='takeoff', desc='Thrust rate (takeoff, idle)')
+        self.options.declare('throttle', default='takeoff', desc='Thrust rate (takeoff, idle)')
         self.options.declare('airplane_data', types=Airplanes, desc='Class containing all airplane data')
         self._init_gradients()
 
@@ -44,7 +44,7 @@ class ThrustComp(om.ExplicitComponent):
         Z = 0.9106 * press_ratio ** 3 - 1.7736 * press_ratio ** 2 + 1.8697 * press_ratio
         X = 0.1377 * press_ratio ** 3 - 0.4374 * press_ratio ** 2 + 1.3003 * press_ratio
 
-        multiplier = 1.0 if self.options['thrust_rating'] == 'takeoff' else 0.07
+        multiplier = 1.0 if self.options['throttle'] == 'takeoff' else 0.07
         num_motors = airplane.engine.num_motors if self.options[
                                                        'condition'] == 'AEO' else airplane.engine.num_motors - 1
 

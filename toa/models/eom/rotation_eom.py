@@ -75,13 +75,12 @@ class RotationEOM(om.ExplicitComponent):
         self.add_output(name='dXdt:v', val=np.zeros(nn), desc="Body x axis acceleration", units='m/s**2')
         self.add_output(name='dXdt:alpha', val=np.zeros(nn), desc="Alpha derivative", units='rad/s')
         self.add_output(name='dXdt:q', val=np.zeros(nn), desc="Pitch rate derivative", units='rad/s**2')
-        self.add_output(name='rf_mainwheel', shape=(nn,), desc='Main wheel reaction force', units='N')
+        self.add_output(name='rf_mainwheel', val=np.zeros(nn), desc='Main wheel reaction force', units='N')
 
     def setup_partials(self):
         nn = self.options['num_nodes']
         ar = np.arange(nn)
         zz = np.zeros(nn)
-        ones = np.ones(nn)
 
         self.declare_partials(of='dXdt:v', wrt='thrust', rows=ar, cols=ar)
         self.declare_partials(of='dXdt:v', wrt='lift', rows=ar, cols=ar)
@@ -94,9 +93,9 @@ class RotationEOM(om.ExplicitComponent):
         self.declare_partials(of='dXdt:v', wrt='grav', rows=ar, cols=zz)
         self.declare_partials(of='dXdt:v', wrt='rw_slope', rows=ar, cols=zz)
 
-        self.declare_partials(of='dXdt:x', wrt='V', rows=ar, cols=ar, val=ones)
+        self.declare_partials(of='dXdt:x', wrt='V', rows=ar, cols=ar, val=1.0)
 
-        self.declare_partials(of='dXdt:alpha', wrt='q', rows=ar, cols=ar, val=ones)
+        self.declare_partials(of='dXdt:alpha', wrt='q', rows=ar, cols=ar, val=1.0)
 
         self.declare_partials(of='dXdt:q', wrt='thrust', rows=ar, cols=ar)
         self.declare_partials(of='dXdt:q', wrt='lift', rows=ar, cols=ar)
