@@ -27,14 +27,6 @@ def dict2obj(item, klss=Airplane):
     return obj
 
 
-class AttributeDict(dict):
-    def __getattr__(self, item):
-        if not isinstance(self[item], dict):
-            return self[item]
-        else:
-            return AttributeDict(self[item])
-
-
 def load_airplane_data(id, datapath):
     """Load airplane's data"""
     filepath = os.path.join(datapath, f"{id.lower()}.yaml")
