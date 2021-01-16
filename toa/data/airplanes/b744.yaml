@@ -1,0 +1,59 @@
+aircraft: Boeing 747-400
+
+wing:
+  area: 525.6
+  span: 64.4
+  mac: 9.68
+  sweep: 37.5
+  t_c: 0.094
+
+flap:
+  type: triple-slotted
+  area: 78.7
+  bf_b: 0.639
+  sf_s: 0.150
+  cf_c: 0.198
+  lambda_f: 0.9
+
+limits:
+  MTOW: 396800
+
+engine:
+  type: turbofan
+  mount: wing
+  num_motors: 4
+  name: PW4062
+  max_thrust_sl: 275800
+  bypass_ratio: 4.6
+  zpos: 0
+  cff1: 2.88943
+  cff2: -2.16939
+  cff3: 2.00708
+
+polar:
+  CD0: 0.021
+  k: 0.049
+  e: 0.816
+
+landing_gear:
+  main:
+    x: 4
+    z: 3
+    number: 1
+  nose:
+    x: 28
+    z: 3
+    number: 1
+
+inertia:
+  iy: 41352447.838
+
+coeffs:
+  CL0: 0.92
+  CLa: 5.67
+  CLde: 0.36
+  CLq: 5.65
+  Cm0: 0.0
+  Cma: -1.45
+  Cmde: -1.40
+  Cmq: -21.4

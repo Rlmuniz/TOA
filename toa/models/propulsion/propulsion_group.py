@@ -1,18 +1,6 @@
-"""
-Inputs:
- - True Airspeed
- - Speed of Sound
- - Ambient Pressure
- - Altitude (Field elevation + CG distance from field level)
-
- Outputs:
-  - Thrust
-  - dXdt:mass_fuel
-"""
-
 import openmdao.api as om
 
-from toa.data.airplanes.airplanes import Airplanes
+from toa.data import Airplane
 from toa.models.propulsion.fuel_flow_comp import FuelFlowComp
 from toa.models.propulsion.mach_comp import MachComp
 from toa.models.propulsion.thrust_comp import ThrustComp
@@ -23,20 +11,24 @@ class PropulsionGroup(om.Group):
 
     def initialize(self):
         self.options.declare('num_nodes', types=int)
-        self.options.declare('condition', default='AEO', desc='Takeoff condition (AEO/OEI)')
-        self.options.declare('throttle', default='takeoff', desc='Thrust rate (takeoff, idle)')
-        self.options.declare('airplane_data', types=Airplanes, desc='Class containing all airplane data')
+        self.options.declare('condition', default='AEO',
+                             desc='Takeoff condition (AEO/OEI)')
+        self.options.declare('throttle', default='takeoff',
+                             desc='Thrust rate (takeoff, idle)')
+        self.options.declare('airplane', types=Airplane,
+                             desc='Class containing all airplane data')
 
     def setup(self):
         nn = self.options['num_nodes']
-        airplane = self.options['airplane_data']
+        airplane = self.options['airplane']
         condition = self.options['condition']
         throttle = self.options['throttle']
 
-        self.add_subsystem(name='mach_comp', subsys=MachComp(num_nodes=nn), promotes_inputs=['tas', 'sos'])
+        self.add_subsystem(name='mach_comp', subsys=MachComp(num_nodes=nn),
+                           promotes_inputs=['tas', 'sos'])
 
         self.add_subsystem(name='thrust_comp',
-                           subsys=ThrustComp(num_nodes=nn, airplane_data=airplane,
+                           subsys=ThrustComp(num_nodes=nn, airplane=airplane,
                                              condition=condition,
                                              throttle=throttle),
                            promotes_outputs=['thrust'])
@@ -44,9 +36,9 @@ class PropulsionGroup(om.Group):
         self.connect('mach_comp.mach', 'thrust_comp.mach')
 
         self.add_subsystem(name='fuel_flow',
-                           subsys=FuelFlowComp(num_nodes=nn, airplane_data=airplane,
+                           subsys=FuelFlowComp(num_nodes=nn, airplane=airplane,
                                                condition=condition),
                            promotes_inputs=['thrust'],
-                           promotes_outputs=['dXdt:mass_fuel'])
+                           promotes_outputs=['m_dot'])
 
         self.connect('thrust_comp.thrust_ratio', 'fuel_flow.thrust_ratio')

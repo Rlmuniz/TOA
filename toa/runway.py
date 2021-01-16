@@ -1,9 +1,13 @@
 class Runway:
 
-    def __init__(self, length: float, clearway: float = 0.0, stopway: float = 0.0):
+    def __init__(self, length: float, clearway: float = 0.0, stopway: float = 0.0,
+                 elevation: float = 0.0,
+                 slope: float = 0.0):
         self._length = length
         self.clearway = clearway
         self.stopway = stopway
+        self.elevation = elevation
+        self.slope = slope
 
     @property
     def tora(self):
@@ -30,6 +34,7 @@ class Runway:
     @property
     def asda(self):
         return self._length + self.stopway
+
 
 if __name__ == '__main__':
     r1 = Runway(3000, 1000, 1000)

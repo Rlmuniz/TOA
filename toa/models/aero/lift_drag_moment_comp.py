@@ -1,18 +1,19 @@
 import numpy as np
 import openmdao.api as om
 
-from toa.data.airplanes.airplanes import Airplanes
+from toa.data import Airplane
 
 
-class AeroForcesComp(om.ExplicitComponent):
+class LiftDragMomentComp(om.ExplicitComponent):
 
     def initialize(self):
         self.options.declare('num_nodes', types=int)
-        self.options.declare('airplane_data', types=Airplanes,
+        self.options.declare('airplane', types=Airplane,
                              desc='Class containing all airplane data')
 
     def setup(self):
         nn = self.options['num_nodes']
+        ar = np.arange(nn)
 
         self.add_input(name='CL', shape=(nn,), desc='Lift coefficient', units=None)
         self.add_input(name='CD', shape=(nn,), desc='Drag coefficient', units=None)
@@ -24,9 +25,6 @@ class AeroForcesComp(om.ExplicitComponent):
         self.add_output(name='D', shape=(nn,), desc='Drag coefficient', units='N')
         self.add_output(name='M', shape=(nn,), desc='Moment coefficient', units='N*m')
 
-    def setup_partials(self):
-        nn = self.options['num_nodes']
-        ar = np.arange(nn)
         self.declare_partials(of='L', wrt='CL', rows=ar, cols=ar)
         self.declare_partials(of='L', wrt='qbar', rows=ar, cols=ar)
 
@@ -37,16 +35,16 @@ class AeroForcesComp(om.ExplicitComponent):
         self.declare_partials(of='M', wrt='qbar', rows=ar, cols=ar)
 
     def compute(self, inputs, outputs, **kwargs):
-        airplane = self.options['airplane_data']
-        qS = inputs['qbar'] * airplane.wing.area
+        ap = self.options['airplane']
+        qS = inputs['qbar'] * ap.wing.area
 
         outputs['L'] = qS * inputs['CL']
         outputs['D'] = qS * inputs['CD']
-        outputs['M'] = qS * airplane.wing.mac * inputs['Cm']
+        outputs['M'] = qS * ap.wing.mac * inputs['Cm']
 
     def compute_partials(self, inputs, partials, **kwargs):
-        airplane = self.options['airplane_data']
-        S = airplane.wing.area
+        ap = self.options['airplane']
+        S = ap.wing.area
         qS = inputs['qbar'] * S
 
         partials['L', 'CL'] = qS
@@ -55,5 +53,5 @@ class AeroForcesComp(om.ExplicitComponent):
         partials['D', 'CD'] = qS
         partials['D', 'qbar'] = S * inputs['CD']
 
-        partials['M', 'Cm'] = qS * airplane.wing.mac
-        partials['M', 'qbar'] = airplane.wing.mac * S * inputs['Cm']
+        partials['M', 'Cm'] = qS * ap.wing.mac
+        partials['M', 'qbar'] = ap.wing.mac * S * inputs['Cm']

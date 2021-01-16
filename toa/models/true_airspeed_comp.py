@@ -19,8 +19,8 @@ class TrueAirspeedCompGroundRoll(om.ExplicitComponent):
         ar = np.arange(nn)
         ones = np.ones(nn)
 
-        self.declare_partials(of='tas', wrt='V', rows=ar, cols=ar, val=ones)
-        self.declare_partials(of='tas', wrt='Vw', rows=ar, cols=np.zeros(nn), val=ones)
+        self.declare_partials(of='tas', wrt='V', rows=ar, cols=ar, val=1.*ones)
+        self.declare_partials(of='tas', wrt='Vw', rows=ar, cols=np.zeros(nn), val=1.*ones)
 
     def compute(self, inputs, outputs, **kwargs):
         outputs['tas'] = inputs['V'] + inputs['Vw']
