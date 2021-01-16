@@ -31,7 +31,7 @@ class RotationEOM(om.ExplicitComponent):
         self.add_input(name='grav', val=0.0, desc='Gravity acceleration',
                        units='m/s**2')
 
-        self.add_output('x_dot', val=np.zeros(nn), desc='Derivative of position',
+        self.add_output(name='x_dot', val=np.zeros(nn), desc='Derivative of position',
                         units='m/s')
         self.add_output(name='v_dot', val=np.zeros(nn), desc="Body x axis acceleration",
                         units='m/s**2')
@@ -59,19 +59,21 @@ class RotationEOM(om.ExplicitComponent):
         q = inputs['q']
         grav = inputs['grav']
         rw_slope = inputs['rw_slope']
-        ap = self.options['airplane']
+        airplane = self.options['airplane']
 
         mu = 0.002
-        xmg = ap.landing_gear.main.x
+        xmg = airplane.landing_gear.main.x
         weight = mass * grav
+        cosslope = np.cos(rw_slope)
+        sinslope = np.cos(rw_slope)
+        cosalpha = np.cos(alpha)
 
-        f_mg = weight * np.cos(rw_slope) - lift
+        f_mg = weight * cosslope - lift
         f_rr = mu * f_mg
-        m_mg = xmg * f_mg
+        m_mg = - xmg * f_mg
 
-        outputs['v_dot'] = (thrust * np.cos(alpha) - drag - f_rr - weight * np.sin(
-                rw_slope)) / mass
+        outputs['v_dot'] = (thrust * cosalpha - drag - f_rr - weight * sinslope) / mass
         outputs['x_dot'] = V
-        outputs['q_dot'] = (moment + m_mg) / ap.inertia.iy
+        outputs['q_dot'] = (moment + m_mg) / airplane.inertia.iy
         outputs['theta_dot'] = q
         outputs['f_mg'] = f_mg

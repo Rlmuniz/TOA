@@ -4,7 +4,7 @@ import openmdao.api as om
 from toa.data import Airplane
 
 
-class GroundRollEOM(om.ExplicitComponent):
+class InitialRunEOM(om.ExplicitComponent):
     """Computes the ground run (1 DoF) with all wheels on the runway to the point of nose wheels lift-off."""
 
     def initialize(self):
@@ -56,20 +56,24 @@ class GroundRollEOM(om.ExplicitComponent):
         grav = inputs['grav']
         rw_slope = inputs['rw_slope']
         alpha = inputs['alpha']
-        ap = self.options['airplane']
-        mu = 0.002
+        airplane = self.options['airplane']
 
-        xmg = ap.landing_gear.main.x
-        xng = ap.landing_gear.nose.x
+        mu_mg = 0.002
+        mu_ng = mu_mg
+
+        xmg = airplane.landing_gear.main.x
+        xng = airplane.landing_gear.nose.x
         weight = mass * grav
+        cosslope = np.cos(rw_slope)
+        sinslope = np.cos(rw_slope)
+        cosalpha = np.cos(alpha)
 
-        f_ng = (moment + xmg * (weight * np.cos(rw_slope) - lift)) / (xmg - xng)
-        f_mg = (moment + xng * (weight * np.cos(rw_slope) - lift)) / (xng - xmg)
+        f_ng = -(moment + xmg * (lift - weight * cosslope)) / (xmg + xng)
+        f_mg = (moment + xng * (weight * cosslope - lift)) / (xmg + xng)
 
-        f_rr = mu * (f_ng + f_mg)
+        f_rr = mu_mg * f_mg + mu_ng * f_ng
 
-        outputs['v_dot'] = (thrust * np.cos(alpha) - drag - f_rr - weight * np.sin(
-                rw_slope)) / mass
+        outputs['v_dot'] = (thrust * cosalpha - drag - f_rr - weight * sinslope) / mass
         outputs['x_dot'] = V
         outputs['f_ng'] = f_ng
         outputs['f_mg'] = f_mg

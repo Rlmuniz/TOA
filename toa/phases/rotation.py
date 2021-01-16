@@ -1,6 +1,6 @@
 import dymos as dm
 
-from toa.ode.rotation import RotationODE
+from toa.ode.rotation_ode import RotationODE
 from scipy.constants import degree
 
 

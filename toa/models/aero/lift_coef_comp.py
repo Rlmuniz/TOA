@@ -34,6 +34,7 @@ class LiftCoeffAllWheelsOnGroundComp(om.ExplicitComponent):
         de = inputs['de']
 
         outputs['CL'] = ap.coeffs.CL0 + ap.coeffs.CLa * alpha + ap.coeffs.CLde * de
+        print(outputs['CL'])
 
 
 class LiftCoeffComp(om.ExplicitComponent):

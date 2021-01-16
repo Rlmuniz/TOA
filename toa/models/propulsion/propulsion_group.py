@@ -31,6 +31,7 @@ class PropulsionGroup(om.Group):
                            subsys=ThrustComp(num_nodes=nn, airplane=airplane,
                                              condition=condition,
                                              throttle=throttle),
+                           promotes_inputs=['p_amb'],
                            promotes_outputs=['thrust'])
 
         self.connect('mach_comp.mach', 'thrust_comp.mach')

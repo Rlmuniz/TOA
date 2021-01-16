@@ -1,6 +1,6 @@
 import dymos as dm
 
-from toa.ode.ground_roll import GroundRollODE
+from toa.ode.initialrun_ode import GroundRollODE
 from scipy.constants import degree
 
 
