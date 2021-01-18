@@ -10,6 +10,7 @@ class DynamicPressureComp(om.ExplicitComponent):
 
     def setup(self):
         nn = self.options['num_nodes']
+        ar = np.arange(nn)
 
         # Inputs
         self.add_input(name='rho', shape=(1,), desc='Atmospheric density',
@@ -20,9 +21,6 @@ class DynamicPressureComp(om.ExplicitComponent):
         self.add_output(name='qbar', val=np.zeros(nn), desc='Dynamic pressure',
                         units='Pa')
 
-    def setup_partials(self):
-        nn = self.options['num_nodes']
-        ar = np.arange(nn)
         self.declare_partials(of='qbar', wrt='rho', rows=ar, cols=np.zeros(nn))
         self.declare_partials(of='qbar', wrt='tas', rows=ar, cols=ar)
 

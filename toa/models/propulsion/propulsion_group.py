@@ -39,7 +39,7 @@ class PropulsionGroup(om.Group):
         self.add_subsystem(name='fuel_flow',
                            subsys=FuelFlowComp(num_nodes=nn, airplane=airplane,
                                                condition=condition),
-                           promotes_inputs=['thrust'],
+                           promotes_inputs=['thrust', 'elevation'],
                            promotes_outputs=['m_dot'])
 
         self.connect('thrust_comp.thrust_ratio', 'fuel_flow.thrust_ratio')

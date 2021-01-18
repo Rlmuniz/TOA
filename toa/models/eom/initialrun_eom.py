@@ -14,6 +14,7 @@ class InitialRunEOM(om.ExplicitComponent):
 
     def setup(self):
         nn = self.options['num_nodes']
+        ar = np.arange(nn)
 
         # Inputs
         self.add_input(name='thrust', val=np.zeros(nn), desc='Engine total thrust',
@@ -42,7 +43,7 @@ class InitialRunEOM(om.ExplicitComponent):
 
         # Partials
         self.declare_partials(of='v_dot', wrt=['*'], method='fd')
-        self.declare_partials(of='x_dot', wrt='V', method='fd')
+        self.declare_partials(of='x_dot', wrt='V', rows=ar, cols=ar, val=1.0)
         self.declare_partials(of='f_ng', wrt=['*'], method='fd')
         self.declare_partials(of='f_mg', wrt=['*'], method='fd')
 
@@ -65,11 +66,11 @@ class InitialRunEOM(om.ExplicitComponent):
         xng = airplane.landing_gear.nose.x
         weight = mass * grav
         cosslope = np.cos(rw_slope)
-        sinslope = np.cos(rw_slope)
+        sinslope = np.sin(rw_slope)
         cosalpha = np.cos(alpha)
 
-        f_ng = -(moment + xmg * (lift - weight * cosslope)) / (xmg + xng)
-        f_mg = (moment + xng * (weight * cosslope - lift)) / (xmg + xng)
+        f_ng = (-moment + xmg * (cosslope * weight - lift)) / (xmg + xng)
+        f_mg = (moment + xng * (cosslope * weight - lift)) / (xmg + xng)
 
         f_rr = mu_mg * f_mg + mu_ng * f_ng
 

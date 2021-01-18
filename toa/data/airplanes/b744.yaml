@@ -49,11 +49,11 @@ inertia:
   iy: 41352447.838
 
 coeffs:
-  CL0: 0.92
-  CLa: 5.67
-  CLde: 0.36
-  CLq: 5.65
+  CL0: 0.21
+  CLa: 4.4
+  CLde: 0.32
+  CLq: 6.6
   Cm0: 0.0
-  Cma: -1.45
-  Cmde: -1.40
-  Cmq: -21.4
+  Cma: -1.00
+  Cmde: -1.30
+  Cmq: -20.5

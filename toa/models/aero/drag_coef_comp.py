@@ -21,7 +21,8 @@ class DragCoeffComp(om.ExplicitComponent):
                        units='rad')
         self.add_input(name='CL', shape=(nn,), desc='Lift coefficient', units=None)
         self.add_input(name='mass', shape=(nn,), desc=' mass', units='kg')
-        self.add_input(name='grav', shape=(1,), desc=' mass', units='m/s**2')
+        self.add_input(name='grav', shape=(1,), desc='Gravity acceleration',
+                       units='m/s**2')
 
         self.add_output(name='CD', shape=(nn,), desc='Drag coefficient', units=None)
 
@@ -36,7 +37,7 @@ class DragCoeffComp(om.ExplicitComponent):
         ap = self.options['airplane']
 
         delta_cd_flap = (
-                ap.flap.lambda_f * ap.flap.cf_c ** 1.38 * ap.flap.sf_s * np.sin(
+                    ap.flap.lambda_f * ap.flap.cf_c ** 1.38 * ap.flap.sf_s * np.sin(
                 fa) ** 2)
 
         if self.options['landing_gear']:
@@ -56,4 +57,4 @@ class DragCoeffComp(om.ExplicitComponent):
 
         k_total = 1 / (1 / ap.polar.k + np.pi * ar * delta_e_flap)
 
-        outputs['CD'] = CD0_total * k_total * CL ** 2
+        outputs['CD'] = CD0_total + k_total * CL ** 2

@@ -42,18 +42,18 @@ class MomentCoeffComp(om.ExplicitComponent):
 
     def setup(self):
         nn = self.options['num_nodes']
-        zeros = np.zeros(nn)
+        ap = self.options['airplane']
         ar = np.arange(nn)
 
-        self.add_input(name='alpha', val=zeros, desc='Angle of attack', units='rad')
-        self.add_input(name='de', val=zeros, desc='Elevator angle', units='rad')
-        self.add_input(name='tas', val=zeros, desc='True Airspeed', units='m/s')
-        self.add_input(name='q', val=zeros, desc='Pitch Rate', units='rad/s')
+        self.add_input(name='alpha', shape=(nn,), desc='Angle of attack', units='rad')
+        self.add_input(name='de', shape=(nn,), desc='Elevator angle', units='rad')
+        self.add_input(name='tas', shape=(nn,), desc='True Airspeed', units='m/s')
+        self.add_input(name='q', shape=(nn,), desc='Pitch Rate', units='rad/s')
 
-        self.add_output(name='Cm', val=zeros, desc='Moment coefficient', units=None)
+        self.add_output(name='Cm', val=np.zeros(nn), desc='Moment coefficient', units=None)
 
-        self.declare_partials(of='Cm', wrt='alpha', rows=ar, cols=ar)
-        self.declare_partials(of='Cm', wrt='de', rows=ar, cols=ar)
+        self.declare_partials(of='Cm', wrt='alpha', rows=ar, cols=ar, val=ap.coeffs.Cma)
+        self.declare_partials(of='Cm', wrt='de', rows=ar, cols=ar, val=ap.coeffs.Cmde)
         self.declare_partials(of='Cm', wrt='tas', rows=ar, cols=ar)
         self.declare_partials(of='Cm', wrt='q', rows=ar, cols=ar)
 
@@ -78,7 +78,5 @@ class MomentCoeffComp(om.ExplicitComponent):
         q = inputs['q']
         tas = inputs['tas']
 
-        partials['Cm', 'alpha'] = ap.coeffs.Cma
-        partials['Cm', 'de'] = ap.coeffs.Cmde
         partials['Cm', 'q'] = ap.coeffs.Cmq * ap.wing.mac / (2 * tas)
         partials['Cm', 'tas'] = - ap.coeffs.Cmq * q * ap.wing.mac / (2 * tas ** 2)

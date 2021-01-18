@@ -42,7 +42,6 @@ class ThrustComp(om.ExplicitComponent):
 
         bpr = ap.engine.bypass_ratio
         p_amb_sl = 101325.0
-
         press_ratio = p_amb / p_amb_sl
 
         A = - 0.4327 * press_ratio ** 2 + 1.3855 * press_ratio + 0.0472

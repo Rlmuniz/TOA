@@ -27,10 +27,10 @@ class InitialRunODE(om.Group):
         assumptions = self.add_subsystem(name='assumptions', subsys=om.IndepVarComp())
         assumptions.add_output('grav', val=9.80665, units='m/s**2',
                                desc='Gravity acceleration')
-        assumptions.add_output('theta', val=0.0, units='rad', desc='Pitch angle')
+        assumptions.add_output('alpha', val=0.0, units='rad', desc='Angle of attack')
 
         self.add_subsystem(name='atmos', subsys=USatm1976Comp(num_nodes=1),
-                           promotes_inputs=['h'])
+                           promotes_inputs=[('h', 'elevation')])
 
         self.add_subsystem(name='tas_comp',
                            subsys=TrueAirspeedCompGroundRoll(num_nodes=nn),
@@ -41,13 +41,14 @@ class InitialRunODE(om.Group):
                            promotes_inputs=['de', 'mass'])
 
         self.connect('assumptions.grav', 'aero.grav')
-        self.connect('assumptions.theta', 'aero.alpha')
+        self.connect('assumptions.alpha', 'aero.alpha')
         self.connect('atmos.rho', 'aero.rho')
         self.connect('tas_comp.tas', 'aero.tas')
 
         self.add_subsystem(name='prop',
                            subsys=PropulsionGroup(num_nodes=nn, airplane=airplane,
-                                                  condition=condition))
+                                                  condition=condition),
+                           promotes_inputs=['elevation'])
 
         self.connect('atmos.sos', 'prop.sos')
         self.connect('atmos.pres', 'prop.p_amb')
@@ -55,12 +56,13 @@ class InitialRunODE(om.Group):
 
         self.add_subsystem(name='initial_run_eom',
                            subsys=InitialRunEOM(num_nodes=nn, airplane=airplane),
-                           promotes_inputs=['mass'])
+                           promotes_inputs=['mass', 'V'])
 
         self.connect('prop.thrust', 'initial_run_eom.thrust')
         self.connect('aero.L', 'initial_run_eom.lift')
         self.connect('aero.D', 'initial_run_eom.drag')
         self.connect('aero.M', 'initial_run_eom.moment')
-        self.connect('tas_comp.tas', 'initial_run_eom.V')
         self.connect('assumptions.grav', 'initial_run_eom.grav')
-        self.connect('assumptions.theta', 'initial_run_eom.alpha')
+        self.connect('assumptions.alpha', 'initial_run_eom.alpha')
+
+        self.set_input_defaults('elevation', val=0.0, units='m')

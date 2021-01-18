@@ -34,7 +34,6 @@ class LiftCoeffAllWheelsOnGroundComp(om.ExplicitComponent):
         de = inputs['de']
 
         outputs['CL'] = ap.coeffs.CL0 + ap.coeffs.CLa * alpha + ap.coeffs.CLde * de
-        print(outputs['CL'])
 
 
 class LiftCoeffComp(om.ExplicitComponent):
@@ -46,7 +45,6 @@ class LiftCoeffComp(om.ExplicitComponent):
 
     def setup(self):
         nn = self.options['num_nodes']
-        zeros = np.zeros(nn)
         ar = np.arange(nn)
 
         self.add_input(name='alpha', shape=(nn,), desc='Angle of attack', units='rad')
@@ -54,7 +52,7 @@ class LiftCoeffComp(om.ExplicitComponent):
         self.add_input(name='tas', shape=(nn,), desc='True Airspeed', units='m/s')
         self.add_input(name='q', shape=(nn,), desc='Pitch Rate', units='rad/s')
 
-        self.add_output(name='CL', val=zeros, desc='Lift coefficient', units=None)
+        self.add_output(name='CL', val=np.zeros(nn), desc='Lift coefficient', units=None)
 
         self.declare_partials(of='CL', wrt='alpha', rows=ar, cols=ar)
         self.declare_partials(of='CL', wrt='de', rows=ar, cols=ar)

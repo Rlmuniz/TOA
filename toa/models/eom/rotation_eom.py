@@ -14,6 +14,7 @@ class RotationEOM(om.ExplicitComponent):
 
     def setup(self):
         nn = self.options['num_nodes']
+        ar = np.arange(nn)
 
         self.add_input(name='thrust', val=np.zeros(nn), desc='Engine total thrust',
                        units='N')
@@ -42,9 +43,9 @@ class RotationEOM(om.ExplicitComponent):
         self.add_output(name='f_mg', val=np.zeros(nn), desc='Main wheel reaction force',
                         units='N')
 
+        self.declare_partials(of='x_dot', wrt='V', rows=ar, cols=ar, val=1.0)
         self.declare_partials(of='v_dot', wrt=['*'], method='fd')
-        self.declare_partials(of='x_dot', wrt='V', method='fd')
-        self.declare_partials(of='theta_dot', wrt='q', method='fd')
+        self.declare_partials(of='theta_dot', wrt='q', rows=ar, cols=ar, val=1.0)
         self.declare_partials(of='q_dot', wrt=['*'], method='fd')
         self.declare_partials(of='f_mg', wrt=['*'], method='fd')
 
@@ -65,7 +66,7 @@ class RotationEOM(om.ExplicitComponent):
         xmg = airplane.landing_gear.main.x
         weight = mass * grav
         cosslope = np.cos(rw_slope)
-        sinslope = np.cos(rw_slope)
+        sinslope = np.sin(rw_slope)
         cosalpha = np.cos(alpha)
 
         f_mg = weight * cosslope - lift
