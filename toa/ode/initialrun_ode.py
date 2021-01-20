@@ -27,7 +27,6 @@ class InitialRunODE(om.Group):
         assumptions = self.add_subsystem(name='assumptions', subsys=om.IndepVarComp())
         assumptions.add_output('grav', val=9.80665, units='m/s**2',
                                desc='Gravity acceleration')
-        assumptions.add_output('alpha', val=0.0, units='rad', desc='Angle of attack')
 
         self.add_subsystem(name='atmos', subsys=USatm1976Comp(num_nodes=1),
                            promotes_inputs=[('h', 'elevation')])
@@ -38,10 +37,9 @@ class InitialRunODE(om.Group):
 
         self.add_subsystem(name='aero', subsys=AerodynamicsGroup(num_nodes=nn,
                                                                  airplane=airplane),
-                           promotes_inputs=['de', 'mass'])
+                           promotes_inputs=['mass'])
 
         self.connect('assumptions.grav', 'aero.grav')
-        self.connect('assumptions.alpha', 'aero.alpha')
         self.connect('atmos.rho', 'aero.rho')
         self.connect('tas_comp.tas', 'aero.tas')
 
@@ -63,6 +61,5 @@ class InitialRunODE(om.Group):
         self.connect('aero.D', 'initial_run_eom.drag')
         self.connect('aero.M', 'initial_run_eom.moment')
         self.connect('assumptions.grav', 'initial_run_eom.grav')
-        self.connect('assumptions.alpha', 'initial_run_eom.alpha')
 
         self.set_input_defaults('elevation', val=0.0, units='m')

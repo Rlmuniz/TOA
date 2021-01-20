@@ -29,7 +29,7 @@ class InitialRunEOM(om.ExplicitComponent):
         self.add_input(name='rw_slope', val=0.0, desc='Runway slope', units='rad')
         self.add_input(name='grav', val=0.0, desc='Gravity acceleration',
                        units='m/s**2')
-        self.add_input(name='alpha', val=0.0, desc='Angle of attack', units='rad')
+        self.add_input(name='alpha', val=np.zeros(nn), desc='Angle of attack', units='rad')
 
         # Outputs
         self.add_output(name='v_dot', val=np.zeros(nn), desc="Body x axis acceleration",

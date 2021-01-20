@@ -17,13 +17,13 @@ class LiftCoeffAllWheelsOnGroundComp(om.ExplicitComponent):
         ar = np.arange(nn)
         zz = np.zeros(nn)
 
-        self.add_input(name='alpha', shape=(1,), desc='Angle of attack', units='rad')
+        self.add_input(name='alpha', shape=(nn,), desc='Angle of attack', units='rad')
         self.add_input(name='de', shape=(nn,), desc='Elevator angle', units='rad')
 
         self.add_output(name='CL', val=np.zeros(nn), desc='Lift coefficient',
                         units=None)
 
-        self.declare_partials(of='CL', wrt='alpha', rows=ar, cols=zz,
+        self.declare_partials(of='CL', wrt='alpha', rows=ar, cols=ar,
                               val=ap.coeffs.CLa)
         self.declare_partials(of='CL', wrt='de', rows=ar, cols=ar,
                               val=ap.coeffs.CLde)

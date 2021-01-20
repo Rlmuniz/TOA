@@ -17,12 +17,12 @@ class MomentCoeffAllWheelsOnGroundComp(om.ExplicitComponent):
         ar = np.arange(nn)
         zz = np.zeros(nn)
 
-        self.add_input(name='alpha', shape=(1,), desc='Angle of attack', units='rad')
+        self.add_input(name='alpha', shape=(nn,), desc='Angle of attack', units='rad')
         self.add_input(name='de', shape=(nn,), desc='Elevator angle', units='rad')
 
         self.add_output(name='Cm', val=zz, desc='Moment coefficient', units=None)
 
-        self.declare_partials(of='Cm', wrt='alpha', rows=ar, cols=zz, val=ap.coeffs.Cma)
+        self.declare_partials(of='Cm', wrt='alpha', rows=ar, cols=ar, val=ap.coeffs.Cma)
         self.declare_partials(of='Cm', wrt='de', rows=ar, cols=ar, val=ap.coeffs.Cmde)
 
     def compute(self, inputs, outputs, **kwargs):

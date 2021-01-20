@@ -38,7 +38,7 @@ class RotationODE(om.Group):
         self.add_subsystem(name='aero', subsys=AerodynamicsGroup(num_nodes=nn,
                                                                  airplane=airplane,
                                                                  AllWheelsOnGround=False),
-                           promotes_inputs=['de', 'alpha', 'q', 'mass'])
+                           promotes_inputs=['alpha', 'q', 'mass'])
 
         self.connect('assumptions.grav', 'aero.grav')
         self.connect('atmos.rho', 'aero.rho')
