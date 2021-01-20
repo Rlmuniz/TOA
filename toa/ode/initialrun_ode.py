@@ -38,7 +38,7 @@ class InitialRunODE(om.Group):
 
         self.add_subsystem(name='aero', subsys=AerodynamicsGroup(num_nodes=nn,
                                                                  airplane=airplane),
-                           promotes_inputs=['de', 'mass'])
+                           promotes_inputs=['mass'])
 
         self.connect('assumptions.grav', 'aero.grav')
         self.connect('assumptions.alpha', 'aero.alpha')
