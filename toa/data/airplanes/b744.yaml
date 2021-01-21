@@ -52,8 +52,10 @@ coeffs:
   CL0: 0.92
   CLa: 5.67
   CLde: 0.36
+  CLih: 0.75
   CLq: 5.65
   Cm0: 0.0
   Cma: -1.45
   Cmde: -1.40
+  Cmih: -3.0
   Cmq: -21.4
