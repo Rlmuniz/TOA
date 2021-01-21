@@ -31,20 +31,20 @@ class AerodynamicsGroup(om.Group):
             self.add_subsystem(name='cl_comp',
                                subsys=LiftCoeffAllWheelsOnGroundComp(num_nodes=nn,
                                                                      airplane=airplane),
-                               promotes_inputs=['alpha', 'de'], promotes_outputs=['CL'])
+                               promotes_inputs=['alpha', 'de', 'dih'], promotes_outputs=['CL'])
             self.add_subsystem(name='cm_comp',
                                subsys=MomentCoeffAllWheelsOnGroundComp(num_nodes=nn,
                                                                        airplane=airplane),
-                               promotes_inputs=['alpha', 'de'],
+                               promotes_inputs=['alpha', 'de', 'dih'],
                                promotes_outputs=['Cm'])
         else:
             self.add_subsystem(name='cl_comp',
                                subsys=LiftCoeffComp(num_nodes=nn, airplane=airplane),
-                               promotes_inputs=['alpha', 'de', 'tas', 'q'],
+                               promotes_inputs=['alpha', 'de', 'tas', 'q', 'dih'],
                                promotes_outputs=['CL'])
             self.add_subsystem(name='cm_comp',
                                subsys=MomentCoeffComp(num_nodes=nn, airplane=airplane),
-                               promotes_inputs=['alpha', 'de', 'tas', 'q'],
+                               promotes_inputs=['alpha', 'de', 'tas', 'q', 'dih'],
                                promotes_outputs=['Cm'])
         self.add_subsystem(name='cd_comp',
                            subsys=DragCoeffComp(num_nodes=nn, airplane=airplane,

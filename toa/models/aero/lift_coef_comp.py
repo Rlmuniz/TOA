@@ -17,18 +17,18 @@ class LiftCoeffAllWheelsOnGroundComp(om.ExplicitComponent):
         ar = np.arange(nn)
         zz = np.zeros(nn)
 
-        self.add_input(name='alpha', shape=(1,), desc='Angle of attack', units='rad')
-        self.add_input(name='de', shape=(1,), desc='Elevator angle', units='rad')
-        self.add_input(name='dih', shape=(1,), desc='Horizontal stabilizer angle', units='rad')
+        self.add_input(name='alpha', shape=(nn,), desc='Angle of attack', units='rad')
+        self.add_input(name='de', shape=(nn,), desc='Elevator angle', units='rad')
+        self.add_input(name='dih', shape=(nn,), desc='Horizontal stabilizer angle', units='rad')
 
         self.add_output(name='CL', val=np.zeros(nn), desc='Lift coefficient',
                         units=None)
 
-        self.declare_partials(of='CL', wrt='alpha', rows=ar, cols=zz,
+        self.declare_partials(of='CL', wrt='alpha', rows=ar, cols=ar,
                               val=ap.coeffs.CLa)
-        self.declare_partials(of='CL', wrt='de', rows=ar, cols=zz,
+        self.declare_partials(of='CL', wrt='de', rows=ar, cols=ar,
                               val=ap.coeffs.CLde)
-        self.declare_partials(of='CL', wrt='dih', rows=ar, cols=zz,
+        self.declare_partials(of='CL', wrt='dih', rows=ar, cols=ar,
                               val=ap.coeffs.CLih)
 
     def compute(self, inputs, outputs, **kwargs):
@@ -55,7 +55,7 @@ class LiftCoeffComp(om.ExplicitComponent):
         self.add_input(name='de', shape=(nn,), desc='Elevator angle', units='rad')
         self.add_input(name='tas', shape=(nn,), desc='True Airspeed', units='m/s')
         self.add_input(name='q', shape=(nn,), desc='Pitch Rate', units='rad/s')
-        self.add_input(name='dih', shape=(1,), desc='Horizontal stabilizer angle',
+        self.add_input(name='dih', shape=(nn,), desc='Horizontal stabilizer angle',
                        units='rad')
 
         self.add_output(name='CL', val=np.zeros(nn), desc='Lift coefficient', units=None)
@@ -64,7 +64,7 @@ class LiftCoeffComp(om.ExplicitComponent):
         self.declare_partials(of='CL', wrt='de', rows=ar, cols=ar)
         self.declare_partials(of='CL', wrt='tas', rows=ar, cols=ar)
         self.declare_partials(of='CL', wrt='q', rows=ar, cols=ar)
-        self.declare_partials(of='CL', wrt='dih', rows=ar, cols=np.zeros(nn))
+        self.declare_partials(of='CL', wrt='dih', rows=ar, cols=ar)
 
     def compute(self, inputs, outputs, **kwargs):
         ap = self.options['airplane']

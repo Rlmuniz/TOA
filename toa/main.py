@@ -35,8 +35,10 @@ initialrun.add_state(name='mass', units='kg', rate_source='prop.m_dot',
                      targets=['mass'], fix_initial=False, fix_final=False)
 
 # Initial run parameters
-initialrun.add_parameter(name='de', val=0.0, units='deg', desc='Elevator deflection', lower=-30.0, upper=30.0, targets=['aero.de'], opt=True)
-initialrun.add_parameter(name='alpha', val=0.0, units='deg', desc='Angle of Attack', targets=['aero.alpha', 'initial_run_eom.alpha'], opt=False)
+initialrun.add_parameter(name='de', val=0.0, units='deg', desc='Elevator deflection',
+                         lower=-30.0, upper=30.0, targets=['aero.de'], opt=True)
+initialrun.add_parameter(name='alpha', val=0.0, units='deg', desc='Angle of Attack',
+                         targets=['aero.alpha', 'initial_run_eom.alpha'], opt=False)
 
 # Initial run path constraints
 initialrun.add_path_constraint(name='initial_run_eom.f_mg', lower=0, units='N')
@@ -60,7 +62,7 @@ initialrun.add_timeseries_output('prop.m_dot', units='kg/s')
 
 ## Rotation
 rotation = dm.Phase(ode_class=RotationODE,
-                    transcription=dm.GaussLobatto(num_segments=3),
+                    transcription=dm.GaussLobatto(num_segments=2),
                     ode_init_kwargs={'airplane': airplane})
 traj.add_phase(name='rotation', phase=rotation)
 
@@ -100,6 +102,10 @@ rotation.add_timeseries_output('rotation_eom.f_mg', units='kN')
 rotation.add_timeseries_output('prop.thrust', units='kN')
 rotation.add_timeseries_output('prop.m_dot', units='kg/s')
 # Trajectory parameters
+traj.add_parameter(name='dih', val=0.0, units='deg', lower=-10.0, upper=10.0,
+                   desc='Horizontal stabilizer angle',
+                   targets={'initialrun': ['aero.dih'], 'rotation': ['aero.dih']},
+                   opt=True)
 traj.add_parameter(name='elevation', val=0.0, units='m', desc='Runway elevation',
                    targets={'initialrun': ['elevation'], 'rotation': ['elevation']},
                    opt=False, dynamic=False)
@@ -120,6 +126,7 @@ p.set_val('traj.initialrun.t_duration', 60)
 
 p.set_val('traj.parameters:elevation', runway.elevation)
 p.set_val('traj.parameters:rw_slope', runway.slope)
+p.set_val('traj.parameters:dih', 0.0)
 
 p['traj.initialrun.states:x'] = initialrun.interpolate(ys=[0, 0.8 * runway.tora],
                                                        nodes='state_input')
@@ -144,12 +151,10 @@ dm.run_problem(p)
 sim_out = traj.simulate()
 
 print(f"RTOW: {p.get_val('traj.initialrun.timeseries.states:mass', units='kg')[0]} kg")
-print(
-        f"Rotation speed (VR): {p.get_val('traj.initialrun.timeseries.states:V', units='kn')[-1]} kn")
-print(
-        f"Liftoff speed (Vlof): {p.get_val('traj.rotation.timeseries.states:V', units='kn')[-1]} kn")
-print(
-        f"Takeoff distance: {p.get_val('traj.rotation.timeseries.states:x', units='m')[-1]} m")
+print(f"Rotation speed (VR): {p.get_val('traj.initialrun.timeseries.states:V', units='kn')[-1]} kn")
+print(f"Liftoff speed (Vlof): {p.get_val('traj.rotation.timeseries.states:V', units='kn')[-1]} kn")
+print(f"Takeoff distance: {p.get_val('traj.rotation.timeseries.states:x', units='m')[-1]} m")
+print(f"Horizontal stabilizer: {p.get_val('traj.parameters:dih')} deg")
 ## Plots
 
 time_driver = {
@@ -239,37 +244,55 @@ for i, param in enumerate(params):
 
 plt.figure()
 plt.subplot(3, 1, 1)
-plt.plot(time_driver['initialrun'], de_driver['initialrun'], marker='o', color='tab:red', linestyle='None', label='solution')
-plt.plot(time_driver['rotation'], de_driver['rotation'], marker='o', color='tab:red', linestyle='None')
-plt.plot(time_sim['initialrun'], de_sim['initialrun'], marker=None, color='tab:blue', linestyle='-')
-plt.plot(time_sim['rotation'], de_sim['rotation'], marker=None, color='tab:blue', linestyle='-', label='simulation')
+plt.plot(time_driver['initialrun'], de_driver['initialrun'], marker='o',
+         color='tab:red', linestyle='None', label='solution')
+plt.plot(time_driver['rotation'], de_driver['rotation'], marker='o', color='tab:red',
+         linestyle='None')
+plt.plot(time_sim['initialrun'], de_sim['initialrun'], marker=None, color='tab:blue',
+         linestyle='-')
+plt.plot(time_sim['rotation'], de_sim['rotation'], marker=None, color='tab:blue',
+         linestyle='-', label='simulation')
 plt.xlabel('Time (s)')
 plt.ylabel('Elevator (deg)')
 
 plt.subplot(3, 1, 2)
-plt.plot(time_driver['initialrun'], theta_driver['initialrun'], marker='o', color='tab:red', linestyle='None', label='solution')
-plt.plot(time_driver['rotation'], theta_driver['rotation'], marker='o', color='tab:red', linestyle='None')
-plt.plot(time_sim['initialrun'], theta_sim['initialrun'], marker=None, color='tab:blue', linestyle='-')
-plt.plot(time_sim['rotation'], theta_sim['rotation'], marker=None, color='tab:blue', linestyle='-', label='simulation')
+plt.plot(time_driver['initialrun'], theta_driver['initialrun'], marker='o',
+         color='tab:red', linestyle='None', label='solution')
+plt.plot(time_driver['rotation'], theta_driver['rotation'], marker='o', color='tab:red',
+         linestyle='None')
+plt.plot(time_sim['initialrun'], theta_sim['initialrun'], marker=None, color='tab:blue',
+         linestyle='-')
+plt.plot(time_sim['rotation'], theta_sim['rotation'], marker=None, color='tab:blue',
+         linestyle='-', label='simulation')
 plt.xlabel('Time (s)')
 plt.ylabel('Theta (deg)')
 
 plt.subplot(3, 1, 3)
-plt.plot(time_driver['initialrun'], q_driver['initialrun'], marker='o', color='tab:red', linestyle='None', label='solution')
-plt.plot(time_driver['rotation'], q_driver['rotation'], marker='o', color='tab:red', linestyle='None')
-plt.plot(time_sim['initialrun'], q_sim['initialrun'], marker=None, color='tab:blue', linestyle='-')
-plt.plot(time_sim['rotation'], q_sim['rotation'], marker=None, color='tab:blue', linestyle='-', label='simulation')
+plt.plot(time_driver['initialrun'], q_driver['initialrun'], marker='o', color='tab:red',
+         linestyle='None', label='solution')
+plt.plot(time_driver['rotation'], q_driver['rotation'], marker='o', color='tab:red',
+         linestyle='None')
+plt.plot(time_sim['initialrun'], q_sim['initialrun'], marker=None, color='tab:blue',
+         linestyle='-')
+plt.plot(time_sim['rotation'], q_sim['rotation'], marker=None, color='tab:blue',
+         linestyle='-', label='simulation')
 plt.xlabel('Time (s)')
 plt.ylabel('Pitch rate (deg/s)')
 plt.legend(loc='lower center', ncol=2)
 
 plt.figure()
-plt.plot(time_driver['initialrun'], p.get_val(f"traj.initialrun.timeseries.f_mg"), marker='o', color='tab:red', linestyle='None', label='solution')
-plt.plot(time_driver['initialrun'], p.get_val(f"traj.initialrun.timeseries.f_ng"), marker='o', color='tab:orange', linestyle='None', label='solution')
-plt.plot(time_driver['rotation'], p.get_val(f"traj.rotation.timeseries.f_mg"), marker='o', color='tab:red', linestyle='None')
-plt.plot(time_sim['initialrun'], sim_out.get_val(f"traj.initialrun.timeseries.f_mg"), marker=None, color='tab:blue', linestyle='-')
-plt.plot(time_sim['initialrun'], sim_out.get_val(f"traj.initialrun.timeseries.f_ng"), marker=None, color='tab:orange', linestyle='-')
-plt.plot(time_sim['rotation'], sim_out.get_val(f"traj.rotation.timeseries.f_mg"), marker=None, color='tab:blue', linestyle='-', label='simulation')
+plt.plot(time_driver['initialrun'], p.get_val(f"traj.initialrun.timeseries.f_mg"),
+         marker='o', color='tab:red', linestyle='None', label='solution')
+plt.plot(time_driver['initialrun'], p.get_val(f"traj.initialrun.timeseries.f_ng"),
+         marker='o', color='tab:orange', linestyle='None', label='solution')
+plt.plot(time_driver['rotation'], p.get_val(f"traj.rotation.timeseries.f_mg"),
+         marker='o', color='tab:red', linestyle='None')
+plt.plot(time_sim['initialrun'], sim_out.get_val(f"traj.initialrun.timeseries.f_mg"),
+         marker=None, color='tab:blue', linestyle='-')
+plt.plot(time_sim['initialrun'], sim_out.get_val(f"traj.initialrun.timeseries.f_ng"),
+         marker=None, color='tab:orange', linestyle='-')
+plt.plot(time_sim['rotation'], sim_out.get_val(f"traj.rotation.timeseries.f_mg"),
+         marker=None, color='tab:blue', linestyle='-', label='simulation')
 plt.legend(loc='lower center', ncol=2)
 plt.grid()
 plt.show()
