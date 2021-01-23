@@ -6,6 +6,7 @@ from toa.models.aero.aerodynamics import AerodynamicsGroup
 from toa.models.alpha_comp import AlphaComp
 from toa.models.eom.transition_oem import TransitionOEM
 from toa.models.propulsion.propulsion_group import PropulsionGroup
+from toa.models.true_airspeed_comp import TrueAirspeedComp
 
 
 class TransitionODE(om.Group):
@@ -27,21 +28,19 @@ class TransitionODE(om.Group):
                                desc='Gravity acceleration')
 
         self.add_subsystem(name='atmos', subsys=USatm1976Comp(num_nodes=1),
-                           promotes_inputs=['h'])
+                           promotes_inputs=[('h', 'elevation')])
 
         self.add_subsystem(name='tas_comp',
-                           subsys=TrueAirspeedCompTransition(num_nodes=nn),
+                           subsys=TrueAirspeedComp(num_nodes=nn),
                            promotes_inputs=['V', 'Vw', 'gam'])
 
         self.add_subsystem(name='alpha_comp', subsys=AlphaComp(num_nodes=nn),
-                           promotes_inputs=['theta'])
-
-        self.connect('tas_comp.corr_gam', 'alpha_comp.gam')
+                           promotes_inputs=['theta', 'gam'])
 
         self.add_subsystem(name='aero', subsys=AerodynamicsGroup(num_nodes=nn,
                                                                  airplane=airplane,
                                                                  AllWheelsOnGround=False),
-                           promotes_inputs=['de', 'q', 'mass'])
+                           promotes_inputs=['q', 'mass'])
 
         self.connect('assumptions.grav', 'aero.grav')
         self.connect('atmos.rho', 'aero.rho')
@@ -50,7 +49,8 @@ class TransitionODE(om.Group):
 
         self.add_subsystem(name='prop',
                            subsys=PropulsionGroup(num_nodes=nn, airplane=airplane,
-                                                  condition=condition))
+                                                  condition=condition),
+                           promotes_inputs=['elevation'])
 
         self.connect('atmos.sos', 'prop.sos')
         self.connect('atmos.pres', 'prop.p_amb')
@@ -58,13 +58,11 @@ class TransitionODE(om.Group):
 
         self.add_subsystem(name='transition_eom',
                            subsys=TransitionOEM(num_nodes=nn, airplane=airplane),
-                           promotes_inputs=['q', 'mass'])
+                           promotes_inputs=['q', 'mass', 'V', 'Vw', 'gam'])
 
         self.connect('prop.thrust', 'transition_eom.thrust')
-        self.connect('aero.L', 'transition_oem.lift')
-        self.connect('aero.D', 'transition_oem.drag')
-        self.connect('aero.M', 'transition_oem.moment')
-        self.connect('tas_comp.tas', 'transition_eom.V')
-        self.connect('tas_comp.corr_gam', 'transition_eom.gam')
+        self.connect('aero.L', 'transition_eom.lift')
+        self.connect('aero.D', 'transition_eom.drag')
+        self.connect('aero.M', 'transition_eom.moment')
         self.connect('assumptions.grav', 'transition_eom.grav')
-        self.connect('alpha_comp.alpha', 'transition_oem.alpha')
+        self.connect('alpha_comp.alpha', 'transition_eom.alpha')

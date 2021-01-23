@@ -54,7 +54,7 @@ class InitialRunODE(om.Group):
 
         self.add_subsystem(name='initial_run_eom',
                            subsys=InitialRunEOM(num_nodes=nn, airplane=airplane),
-                           promotes_inputs=['mass', 'V'])
+                           promotes_inputs=['mass', 'V', 'Vw'])
 
         self.connect('prop.thrust', 'initial_run_eom.thrust')
         self.connect('aero.L', 'initial_run_eom.lift')

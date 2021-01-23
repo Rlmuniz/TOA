@@ -29,6 +29,9 @@ class InitialRunEOM(om.ExplicitComponent):
         self.add_input(name='rw_slope', val=0.0, desc='Runway slope', units='rad')
         self.add_input(name='grav', val=0.0, desc='Gravity acceleration',
                        units='m/s**2')
+        self.add_input(name='Vw', val=0.0,
+                       desc='Wind speed along the runway, defined as positive for a headwind',
+                       units='m/s')
         self.add_input(name='alpha', val=np.zeros(nn), desc='Angle of attack', units='rad')
 
         # Outputs
@@ -44,6 +47,7 @@ class InitialRunEOM(om.ExplicitComponent):
         # Partials
         self.declare_partials(of='v_dot', wrt=['*'], method='fd')
         self.declare_partials(of='x_dot', wrt='V', rows=ar, cols=ar, val=1.0)
+        self.declare_partials(of='x_dot', wrt='Vw', rows=ar, cols=np.zeros(nn), val=-1.0)
         self.declare_partials(of='f_ng', wrt=['*'], method='fd')
         self.declare_partials(of='f_mg', wrt=['*'], method='fd')
 
@@ -57,6 +61,7 @@ class InitialRunEOM(om.ExplicitComponent):
         grav = inputs['grav']
         rw_slope = inputs['rw_slope']
         alpha = inputs['alpha']
+        Vw = inputs['Vw']
         airplane = self.options['airplane']
 
         mu_mg = 0.002
@@ -75,6 +80,6 @@ class InitialRunEOM(om.ExplicitComponent):
         f_rr = mu_mg * f_mg + mu_ng * f_ng
 
         outputs['v_dot'] = (thrust * cosalpha - drag - f_rr - weight * sinslope) / mass
-        outputs['x_dot'] = V
+        outputs['x_dot'] = V - Vw
         outputs['f_ng'] = f_ng
         outputs['f_mg'] = f_mg

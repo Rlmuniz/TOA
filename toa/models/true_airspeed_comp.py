@@ -35,15 +35,11 @@ class TrueAirspeedComp(om.ExplicitComponent):
         self.add_input(name='Vw', val=0.0,
                        desc='Wind speed along the runway, defined as positive for a headwind',
                        units='m/s')
-        self.add_input(name='gam', val=np.zeros(nn), desc='Flight path angle',
+        self.add_input(name='gam', shape=(nn,), desc='Flight path angle',
                        units='rad')
 
-        self.add_output(name='corr_gam', val=np.zeros(nn),
-                        desc='Corrected flight path angle due to wind speed',
-                        units='rad')
         self.add_output(name='tas', val=np.zeros(nn), desc="True airspeed", units='m/s')
 
-        self.declare_partials(of='corr_gam', wrt=['*'], method='fd')
         self.declare_partials(of='tas', wrt=['*'], method='fd')
 
     def compute(self, inputs, outputs, **kwargs):
@@ -57,5 +53,4 @@ class TrueAirspeedComp(om.ExplicitComponent):
         Vx = V * cosgam + Vw
         Vy = V * singam
 
-        outputs['corr_gam'] = np.arctan(Vy / Vx)
         outputs['tas'] = (Vx ** 2 + Vy ** 2) ** 0.5

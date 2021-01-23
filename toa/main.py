@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 from toa.data import get_airplane_data
 from toa.ode.initialrun_ode import InitialRunODE
 from toa.ode.rotation_ode import RotationODE
-from dymos.examples.plotting import plot_results
+from toa.ode.transition_ode import TransitionODE
 
 from toa.runway import Runway
 
@@ -101,34 +101,98 @@ rotation.add_timeseries_output('aero.Cm')
 rotation.add_timeseries_output('rotation_eom.f_mg', units='kN')
 rotation.add_timeseries_output('prop.thrust', units='kN')
 rotation.add_timeseries_output('prop.m_dot', units='kg/s')
+
+## Transition
+transition = dm.Phase(ode_class=TransitionODE,
+                      transcription=dm.GaussLobatto(num_segments=3),
+                      ode_init_kwargs={'airplane': airplane})
+traj.add_phase(name='transition', phase=transition)
+
+transition.set_time_options(fix_initial=False, units='s')
+
+# Transition states
+transition.add_state(name='V', units='kn', rate_source='transition_eom.v_dot',
+                     targets=['V'], fix_initial=False, fix_final=False, lower=0)
+transition.add_state(name='gam', units='deg', rate_source='transition_eom.gam_dot',
+                     targets=['gam'], fix_initial=True, fix_final=False, lower=0)
+transition.add_state(name='x', units='m', rate_source='transition_eom.x_dot',
+                     fix_initial=False, fix_final=False, lower=0)
+transition.add_state(name='h', units='m', rate_source='transition_eom.h_dot',
+                     fix_initial=True, fix_final=False, lower=0)
+transition.add_state(name='theta', units='deg', rate_source='transition_eom.theta_dot',
+                     targets=['theta'],
+                     fix_initial=False, fix_final=False, lower=0, upper=20)
+transition.add_state(name='q', units='deg/s', rate_source='transition_eom.q_dot',
+                     targets=['q'],
+                     fix_initial=False, fix_final=False, lower=0, upper=30)
+transition.add_state(name='mass', units='kg', rate_source='prop.m_dot',
+                     targets=['mass'],
+                     fix_initial=False, fix_final=False, lower=0)
+
+# Transition controls
+transition.add_control(name='de', units='deg', desc='Elevator defletion', opt=True,
+                       fix_initial=False, fix_final=False, targets=['aero.de'],
+                       lower=-30.0, upper=30.0)
+
+# Transition path constraints
+# transition.add_path_constraint(name='transition_eom.q_dot', equals=0, units='deg/s')
+# Rotation boundary constraint
+transition.add_boundary_constraint(name='x', loc='final', units='m', upper=runway.toda)
+transition.add_boundary_constraint(name='h', loc='final', units='ft', equals=35.0)
+transition.add_boundary_constraint(name='q', loc='final', units='deg/s', equals=0.0)
+
+transition.add_timeseries_output('aero.CD')
+transition.add_timeseries_output('aero.CL')
+transition.add_timeseries_output('aero.Cm')
+transition.add_timeseries_output('prop.thrust', units='kN')
+transition.add_timeseries_output('prop.m_dot', units='kg/s')
+
 # Trajectory parameters
 traj.add_parameter(name='dih', val=0.0, units='deg', lower=-10.0, upper=10.0,
                    desc='Horizontal stabilizer angle',
-                   targets={'initialrun': ['aero.dih'], 'rotation': ['aero.dih']},
+                   targets={
+                       'initialrun': ['aero.dih'], 'rotation': ['aero.dih'],
+                       'transition': ['aero.dih']
+                   },
                    opt=True)
+traj.add_parameter(name='Vw', val=0.0, units='m/s',
+                   desc='Wind speed along the runway, defined as positive for a headwind',
+                   targets={
+                       'initialrun': ['Vw'], 'rotation': ['Vw'],
+                       'transition': ['Vw']
+                   },
+                   opt=False, dynamic=False)
 traj.add_parameter(name='elevation', val=0.0, units='m', desc='Runway elevation',
-                   targets={'initialrun': ['elevation'], 'rotation': ['elevation']},
+                   targets={
+                       'initialrun': ['elevation'], 'rotation': ['elevation'],
+                       'transition': ['elevation']
+                   },
                    opt=False, dynamic=False)
 traj.add_parameter(name='rw_slope', val=0.0, units='rad', desc='Runway slope',
                    targets={
                        'initialrun': ['initial_run_eom.rw_slope'],
-                       'rotation': ['rotation_eom.rw_slope']
+                       'rotation': ['rotation_eom.rw_slope'],
                    },
                    opt=False, dynamic=False)
 
 traj.link_phases(phases=['initialrun', 'rotation'],
                  vars=['time', 'V', 'x', 'mass', 'de'])
+traj.link_phases(phases=['rotation', 'transition'],
+                 vars=['time', 'V', 'x', 'mass', 'de', 'theta', 'q'])
 
 p.setup()
 
 p.set_val('traj.initialrun.t_initial', 0)
 p.set_val('traj.initialrun.t_duration', 60)
+p.set_val('traj.rotation.t_duration', 5)
+p.set_val('traj.transition.t_duration', 10)
 
 p.set_val('traj.parameters:elevation', runway.elevation)
 p.set_val('traj.parameters:rw_slope', runway.slope)
 p.set_val('traj.parameters:dih', 0.0)
+p.set_val('traj.parameters:Vw', 0.0)
 
-p['traj.initialrun.states:x'] = initialrun.interpolate(ys=[0, 0.8 * runway.tora],
+p['traj.initialrun.states:x'] = initialrun.interpolate(ys=[0, 0.7 * runway.tora],
                                                        nodes='state_input')
 p['traj.initialrun.states:V'] = initialrun.interpolate(ys=[0, 150], nodes='state_input')
 p['traj.initialrun.states:mass'] = initialrun.interpolate(
@@ -136,58 +200,90 @@ p['traj.initialrun.states:mass'] = initialrun.interpolate(
 p['traj.initialrun.parameters:de'] = 0.0
 p['traj.initialrun.parameters:alpha'] = 0.0
 
-p['traj.rotation.states:x'] = rotation.interpolate(ys=[0.8 * runway.tora, runway.tora],
-                                                   nodes='state_input')
-p['traj.rotation.states:V'] = rotation.interpolate(ys=[150, 200], nodes='state_input')
+p['traj.rotation.states:x'] = rotation.interpolate(
+    ys=[0.7 * runway.tora, 0.9 * runway.tora],
+    nodes='state_input')
+p['traj.rotation.states:V'] = rotation.interpolate(ys=[150, 160], nodes='state_input')
 p['traj.rotation.states:mass'] = rotation.interpolate(
         ys=[airplane.limits.MTOW - 600, airplane.limits.MTOW - 1000],
         nodes='state_input')
-p['traj.rotation.states:theta'] = rotation.interpolate(ys=[0.0, 20.0],
+p['traj.rotation.states:theta'] = rotation.interpolate(ys=[0.0, 15.0],
                                                        nodes='state_input')
-p['traj.rotation.states:q'] = rotation.interpolate(ys=[0.0, 30.0],
+p['traj.rotation.states:q'] = rotation.interpolate(ys=[0.0, 20.0],
                                                    nodes='state_input')
+
+p['traj.transition.states:x'] = transition.interpolate(
+    ys=[0.9 * runway.tora, runway.toda],
+    nodes='state_input')
+p['traj.transition.states:h'] = transition.interpolate(ys=[0.0, 35.0 * 0.3048],
+                                                       nodes='state_input')
+p['traj.transition.states:V'] = transition.interpolate(ys=[160, 200],
+                                                       nodes='state_input')
+p['traj.transition.states:gam'] = transition.interpolate(ys=[0.0, 10.0],
+                                                         nodes='state_input')
+p['traj.transition.states:mass'] = transition.interpolate(
+        ys=[airplane.limits.MTOW - 1000, airplane.limits.MTOW - 1400],
+        nodes='state_input')
+p['traj.transition.states:theta'] = transition.interpolate(ys=[15.0, 20.0],
+                                                           nodes='state_input')
+p['traj.transition.states:q'] = transition.interpolate(ys=[20.0, 0.0],
+                                                       nodes='state_input')
 
 dm.run_problem(p)
 sim_out = traj.simulate()
 
 print(f"RTOW: {p.get_val('traj.initialrun.timeseries.states:mass', units='kg')[0]} kg")
-print(f"Rotation speed (VR): {p.get_val('traj.initialrun.timeseries.states:V', units='kn')[-1]} kn")
-print(f"Liftoff speed (Vlof): {p.get_val('traj.rotation.timeseries.states:V', units='kn')[-1]} kn")
-print(f"Takeoff distance: {p.get_val('traj.rotation.timeseries.states:x', units='m')[-1]} m")
+print(
+    f"Rotation speed (VR): {p.get_val('traj.initialrun.timeseries.states:V', units='kn')[-1]} kn")
+print(
+    f"Liftoff speed (Vlof): {p.get_val('traj.rotation.timeseries.states:V', units='kn')[-1]} kn")
+print(
+    f"End of transition speed (V3): {p.get_val('traj.transition.timeseries.states:V', units='kn')[-1]} kn")
+print(
+    f"Takeoff distance: {p.get_val('traj.transition.timeseries.states:x', units='m')[-1]} m")
 print(f"Horizontal stabilizer: {p.get_val('traj.parameters:dih')} deg")
+
 ## Plots
 
 time_driver = {
     'initialrun': p.get_val('traj.initialrun.timeseries.time'),
-    'rotation': p.get_val('traj.rotation.timeseries.time')
+    'rotation': p.get_val('traj.rotation.timeseries.time'),
+    'transition': p.get_val('traj.transition.timeseries.time')
 }
 time_sim = {
     'initialrun': sim_out.get_val('traj.initialrun.timeseries.time'),
-    'rotation': sim_out.get_val('traj.rotation.timeseries.time')
+    'rotation': sim_out.get_val('traj.rotation.timeseries.time'),
+    'transition': sim_out.get_val('traj.transition.timeseries.time')
 }
 de_driver = {
     'initialrun': p.get_val('traj.initialrun.timeseries.parameters:de'),
-    'rotation': p.get_val('traj.rotation.timeseries.controls:de')
+    'rotation': p.get_val('traj.rotation.timeseries.controls:de'),
+    'transition': p.get_val('traj.transition.timeseries.controls:de')
 }
 de_sim = {
     'initialrun': sim_out.get_val('traj.initialrun.timeseries.parameters:de'),
-    'rotation': sim_out.get_val('traj.rotation.timeseries.controls:de')
+    'rotation': sim_out.get_val('traj.rotation.timeseries.controls:de'),
+    'transition': sim_out.get_val('traj.transition.timeseries.controls:de')
 }
 theta_driver = {
     'initialrun': p.get_val('traj.initialrun.timeseries.parameters:alpha'),
-    'rotation': p.get_val('traj.rotation.timeseries.states:theta')
+    'rotation': p.get_val('traj.rotation.timeseries.states:theta'),
+    'transition': p.get_val('traj.transition.timeseries.states:theta')
 }
 theta_sim = {
     'initialrun': sim_out.get_val('traj.initialrun.timeseries.parameters:alpha'),
-    'rotation': sim_out.get_val('traj.rotation.timeseries.states:theta')
+    'rotation': sim_out.get_val('traj.rotation.timeseries.states:theta'),
+    'transition': sim_out.get_val('traj.transition.timeseries.states:theta'),
 }
 q_driver = {
     'initialrun': len(p.get_val('traj.initialrun.timeseries.time')) * [0.0],
-    'rotation': p.get_val('traj.rotation.timeseries.states:q')
+    'rotation': p.get_val('traj.rotation.timeseries.states:q'),
+    'transition': p.get_val('traj.transition.timeseries.states:q'),
 }
 q_sim = {
     'initialrun': len(sim_out.get_val('traj.initialrun.timeseries.time')) * [0.0],
-    'rotation': sim_out.get_val('traj.rotation.timeseries.states:q')
+    'rotation': sim_out.get_val('traj.rotation.timeseries.states:q'),
+    'transition': sim_out.get_val('traj.transition.timeseries.states:q'),
 }
 
 fig, axes = plt.subplots(nrows=3, ncols=1, figsize=(12, 6))
@@ -195,11 +291,13 @@ commom_states = ['x', 'V', 'mass']
 for i, state in enumerate(commom_states):
     x_driver = {
         'initialrun': p.get_val(f"traj.initialrun.timeseries.states:{state}"),
-        'rotation': p.get_val(f"traj.rotation.timeseries.states:{state}")
+        'rotation': p.get_val(f"traj.rotation.timeseries.states:{state}"),
+        'transition': p.get_val(f"traj.transition.timeseries.states:{state}"),
     }
     x_sim = {
         'initialrun': sim_out.get_val(f"traj.initialrun.timeseries.states:{state}"),
-        'rotation': sim_out.get_val(f"traj.rotation.timeseries.states:{state}")
+        'rotation': sim_out.get_val(f"traj.rotation.timeseries.states:{state}"),
+        'transition': sim_out.get_val(f"traj.transition.timeseries.states:{state}"),
     }
 
     axes[i].plot(time_driver['initialrun'], x_driver['initialrun'], marker='o',
@@ -207,10 +305,14 @@ for i, state in enumerate(commom_states):
                  label='solution' if i == 0 else None)
     axes[i].plot(time_driver['rotation'], x_driver['rotation'], marker='o',
                  color='tab:red', linestyle='None')
+    axes[i].plot(time_driver['transition'], x_driver['transition'], marker='o',
+                 color='tab:red', linestyle='None')
     axes[i].plot(time_sim['initialrun'], x_sim['initialrun'], marker=None,
                  color='tab:blue', linestyle='-')
     axes[i].plot(time_sim['rotation'], x_sim['rotation'], marker=None, color='tab:blue',
                  linestyle='-', label='simulation' if i == 0 else None)
+    axes[i].plot(time_sim['transition'], x_sim['transition'], marker=None,
+                 color='tab:blue', linestyle='-')
     axes[i].set_ylabel(state)
     axes[i].set_xlabel('Time (s)')
     axes[i].grid(True)
@@ -221,11 +323,13 @@ params = ['CL', 'CD', 'Cm', 'm_dot', 'thrust']
 for i, param in enumerate(params):
     x_driver = {
         'initialrun': p.get_val(f"traj.initialrun.timeseries.{param}"),
-        'rotation': p.get_val(f"traj.rotation.timeseries.{param}")
+        'rotation': p.get_val(f"traj.rotation.timeseries.{param}"),
+        'transition': p.get_val(f"traj.transition.timeseries.{param}")
     }
     x_sim = {
         'initialrun': sim_out.get_val(f"traj.initialrun.timeseries.{param}"),
-        'rotation': sim_out.get_val(f"traj.rotation.timeseries.{param}")
+        'rotation': sim_out.get_val(f"traj.rotation.timeseries.{param}"),
+        'transition': sim_out.get_val(f"traj.transition.timeseries.{param}")
     }
 
     axes[i].plot(time_driver['initialrun'], x_driver['initialrun'], marker='o',
@@ -233,10 +337,14 @@ for i, param in enumerate(params):
                  label='solution' if i == 0 else None)
     axes[i].plot(time_driver['rotation'], x_driver['rotation'], marker='o',
                  color='tab:red', linestyle='None')
+    axes[i].plot(time_driver['transition'], x_driver['transition'], marker='o',
+                 color='tab:red', linestyle='None')
     axes[i].plot(time_sim['initialrun'], x_sim['initialrun'], marker=None,
                  color='tab:blue', linestyle='-')
     axes[i].plot(time_sim['rotation'], x_sim['rotation'], marker=None, color='tab:blue',
                  linestyle='-', label='simulation' if i == 0 else None)
+    axes[i].plot(time_sim['transition'], x_sim['transition'], marker=None,
+                 color='tab:blue', linestyle='-')
     axes[i].set_ylabel(param)
     axes[i].set_xlabel('Time (s)')
     axes[i].grid(True)

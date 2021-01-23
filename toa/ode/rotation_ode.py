@@ -55,7 +55,7 @@ class RotationODE(om.Group):
 
         self.add_subsystem(name='rotation_eom',
                            subsys=RotationEOM(num_nodes=nn, airplane=airplane),
-                           promotes_inputs=['mass', 'q', 'V', 'alpha'])
+                           promotes_inputs=['mass', 'q', 'V', 'Vw', 'alpha'])
 
         self.connect('prop.thrust', 'rotation_eom.thrust')
         self.connect('aero.L', 'rotation_eom.lift')

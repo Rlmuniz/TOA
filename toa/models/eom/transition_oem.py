@@ -31,7 +31,9 @@ class TransitionOEM(om.ExplicitComponent):
                        units='rad')
         self.add_input(name='grav', val=0.0, desc='Gravity acceleration',
                        units='m/s**2')
-
+        self.add_input(name='Vw', val=0.0,
+                       desc='Wind speed along the runway, defined as positive for a headwind',
+                       units='m/s')
         self.add_output(name='v_dot', val=np.zeros(nn), desc='Body x axis acceleration',
                         units='m/s**2')
         self.add_output(name='gam_dot', val=np.zeros(nn), desc='Flight path angle rate',
@@ -61,6 +63,7 @@ class TransitionOEM(om.ExplicitComponent):
         alpha = inputs['alpha']
         q = inputs['q']
         gam = inputs['gam']
+        Vw = inputs['Vw']
         grav = inputs['grav']
         airplane = self.options['airplane']
 
@@ -69,11 +72,11 @@ class TransitionOEM(om.ExplicitComponent):
         cosgam = np.cos(gam)
         singam = np.sin(gam)
         cosalpha = np.cos(alpha)
-        sinalpha = np.cos(alpha)
+        sinalpha = np.sin(alpha)
 
         outputs['v_dot'] = (thrust * cosalpha - drag - weight * singam) / mass
         outputs['gam_dot'] = (thrust * sinalpha + lift - weight * cosgam) / (mass * V)
-        outputs['x_dot'] = outputs['v_dot'] * cosgam
+        outputs['x_dot'] = outputs['v_dot'] * cosgam - Vw
         outputs['h_dot'] = outputs['v_dot'] * singam
         outputs['q_dot'] = moment / airplane.inertia.iy
         outputs['theta_dot'] = q
