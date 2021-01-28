@@ -1,6 +1,7 @@
 import openmdao.api as om
 import dymos as dm
 import matplotlib.pyplot as plt
+from dymos.examples.plotting import plot_results
 
 from toa.data import get_airplane_data
 from toa.ode.initialrun_ode import InitialRunODE
@@ -62,7 +63,7 @@ initialrun.add_timeseries_output('prop.m_dot', units='kg/s')
 
 ## Rotation
 rotation = dm.Phase(ode_class=RotationODE,
-                    transcription=dm.GaussLobatto(num_segments=2),
+                    transcription=dm.GaussLobatto(num_segments=5),
                     ode_init_kwargs={'airplane': airplane})
 traj.add_phase(name='rotation', phase=rotation)
 
@@ -79,8 +80,7 @@ rotation.add_state(name='theta', units='deg', rate_source='rotation_eom.theta_do
                    targets=['alpha'],
                    fix_initial=True, fix_final=False, lower=0, upper=20)
 rotation.add_state(name='q', units='deg/s', rate_source='rotation_eom.q_dot',
-                   targets=['q'],
-                   fix_initial=True, fix_final=False, lower=0, upper=30)
+                   targets=['q'], fix_initial=True, fix_final=False)
 
 # Rotation controls
 rotation.add_control(name='de', units='deg', desc='Elevator defletion', opt=True,
@@ -89,7 +89,7 @@ rotation.add_control(name='de', units='deg', desc='Elevator defletion', opt=True
 
 # Rotation path constraints
 rotation.add_path_constraint(name='rotation_eom.f_mg', lower=0, units='N')
-
+rotation.add_path_constraint(name='q', units='deg/s', lower=0.0, upper=10.0)
 # Rotation boundary constraint
 rotation.add_boundary_constraint(name='x', loc='final', units='m', upper=runway.tora)
 rotation.add_boundary_constraint(name='rotation_eom.f_mg', loc='final', units='N',
@@ -104,7 +104,7 @@ rotation.add_timeseries_output('prop.m_dot', units='kg/s')
 
 ## Transition
 transition = dm.Phase(ode_class=TransitionODE,
-                      transcription=dm.GaussLobatto(num_segments=3),
+                      transcription=dm.GaussLobatto(num_segments=5),
                       ode_init_kwargs={'airplane': airplane})
 traj.add_phase(name='transition', phase=transition)
 
@@ -114,11 +114,11 @@ transition.set_time_options(fix_initial=False, units='s')
 transition.add_state(name='V', units='kn', rate_source='transition_eom.v_dot',
                      targets=['V'], fix_initial=False, fix_final=False, lower=0)
 transition.add_state(name='gam', units='deg', rate_source='transition_eom.gam_dot',
-                     targets=['gam'], fix_initial=True, fix_final=False, lower=0)
+                     targets=['gam'], fix_initial=True, fix_final=False)
 transition.add_state(name='x', units='m', rate_source='transition_eom.x_dot',
                      fix_initial=False, fix_final=False, lower=0)
-transition.add_state(name='h', units='m', rate_source='transition_eom.h_dot',
-                     fix_initial=True, fix_final=False, lower=0)
+transition.add_state(name='h', units='ft', rate_source='transition_eom.h_dot',
+                     fix_initial=True, lower=0)
 transition.add_state(name='theta', units='deg', rate_source='transition_eom.theta_dot',
                      targets=['theta'],
                      fix_initial=False, fix_final=False, lower=0, upper=20)
@@ -130,20 +130,21 @@ transition.add_state(name='mass', units='kg', rate_source='prop.m_dot',
                      fix_initial=False, fix_final=False, lower=0)
 
 # Transition controls
-transition.add_control(name='de', units='deg', desc='Elevator defletion', opt=True,
+transition.add_control(name='de', units='deg', desc='Elevator deflection', opt=True,
                        fix_initial=False, fix_final=False, targets=['aero.de'],
                        lower=-30.0, upper=30.0)
 
 # Transition path constraints
-# transition.add_path_constraint(name='transition_eom.q_dot', equals=0, units='deg/s')
+transition.add_path_constraint(name='h', lower=0.0, upper=35.0)
+transition.add_path_constraint(name='gam', lower=0.0)
 # Rotation boundary constraint
 transition.add_boundary_constraint(name='x', loc='final', units='m', upper=runway.toda)
 transition.add_boundary_constraint(name='h', loc='final', units='ft', equals=35.0)
-transition.add_boundary_constraint(name='q', loc='final', units='deg/s', equals=0.0)
 
 transition.add_timeseries_output('aero.CD')
 transition.add_timeseries_output('aero.CL')
 transition.add_timeseries_output('aero.Cm')
+transition.add_timeseries_output('alpha_comp.alpha', units='deg')
 transition.add_timeseries_output('prop.thrust', units='kN')
 transition.add_timeseries_output('prop.m_dot', units='kg/s')
 
@@ -160,6 +161,12 @@ traj.add_parameter(name='Vw', val=0.0, units='m/s',
                    targets={
                        'initialrun': ['Vw'], 'rotation': ['Vw'],
                        'transition': ['Vw']
+                   },
+                   opt=False, dynamic=False)
+traj.add_parameter(name='flap_angle', val=0.0, units='deg', desc='Flap defletion',
+                   targets={
+                       'initialrun': ['aero.flap_angle'], 'rotation': ['aero.flap_angle'],
+                       'transition': ['aero.flap_angle']
                    },
                    opt=False, dynamic=False)
 traj.add_parameter(name='elevation', val=0.0, units='m', desc='Runway elevation',
@@ -184,11 +191,14 @@ p.setup()
 
 p.set_val('traj.initialrun.t_initial', 0)
 p.set_val('traj.initialrun.t_duration', 60)
+p.set_val('traj.rotation.t_initial', 60)
 p.set_val('traj.rotation.t_duration', 5)
+p.set_val('traj.transition.t_initial', 65)
 p.set_val('traj.transition.t_duration', 10)
 
 p.set_val('traj.parameters:elevation', runway.elevation)
 p.set_val('traj.parameters:rw_slope', runway.slope)
+p.set_val('traj.parameters:flap_angle', 0.0)
 p.set_val('traj.parameters:dih', 0.0)
 p.set_val('traj.parameters:Vw', 0.0)
 
@@ -201,21 +211,21 @@ p['traj.initialrun.parameters:de'] = 0.0
 p['traj.initialrun.parameters:alpha'] = 0.0
 
 p['traj.rotation.states:x'] = rotation.interpolate(
-    ys=[0.7 * runway.tora, 0.9 * runway.tora],
-    nodes='state_input')
+        ys=[0.7 * runway.tora, 0.8 * runway.tora],
+        nodes='state_input')
 p['traj.rotation.states:V'] = rotation.interpolate(ys=[150, 160], nodes='state_input')
 p['traj.rotation.states:mass'] = rotation.interpolate(
         ys=[airplane.limits.MTOW - 600, airplane.limits.MTOW - 1000],
         nodes='state_input')
 p['traj.rotation.states:theta'] = rotation.interpolate(ys=[0.0, 15.0],
                                                        nodes='state_input')
-p['traj.rotation.states:q'] = rotation.interpolate(ys=[0.0, 20.0],
+p['traj.rotation.states:q'] = rotation.interpolate(ys=[0.0, 10.0],
                                                    nodes='state_input')
 
 p['traj.transition.states:x'] = transition.interpolate(
-    ys=[0.9 * runway.tora, runway.toda],
-    nodes='state_input')
-p['traj.transition.states:h'] = transition.interpolate(ys=[0.0, 35.0 * 0.3048],
+        ys=[0.8 * runway.tora, runway.toda],
+        nodes='state_input')
+p['traj.transition.states:h'] = transition.interpolate(ys=[0.0, 35.0],
                                                        nodes='state_input')
 p['traj.transition.states:V'] = transition.interpolate(ys=[160, 200],
                                                        nodes='state_input')
@@ -224,9 +234,9 @@ p['traj.transition.states:gam'] = transition.interpolate(ys=[0.0, 10.0],
 p['traj.transition.states:mass'] = transition.interpolate(
         ys=[airplane.limits.MTOW - 1000, airplane.limits.MTOW - 1400],
         nodes='state_input')
-p['traj.transition.states:theta'] = transition.interpolate(ys=[15.0, 20.0],
+p['traj.transition.states:theta'] = transition.interpolate(ys=[15.0, 10.0],
                                                            nodes='state_input')
-p['traj.transition.states:q'] = transition.interpolate(ys=[20.0, 0.0],
+p['traj.transition.states:q'] = transition.interpolate(ys=[10.0, 0.0],
                                                        nodes='state_input')
 
 dm.run_problem(p)
@@ -244,7 +254,71 @@ print(
 print(f"Horizontal stabilizer: {p.get_val('traj.parameters:dih')} deg")
 
 ## Plots
+plot_results([('traj.initialrun.timeseries.time', 'traj.initialrun.timeseries.states:V',
+               'Time (s)', 'Speed (kt)'),
+              ('traj.initialrun.timeseries.time', 'traj.initialrun.timeseries.states:x',
+               'time (s)', 'Position (m)'),
+              ('traj.initialrun.timeseries.time', 'traj.initialrun.timeseries.states:mass',
+               'time (s)', 'Mass (kg)'),
+              ],
+             title='Initial Run',
+             p_sol=p, p_sim=sim_out)
 
+plot_results([('traj.rotation.timeseries.time', 'traj.rotation.timeseries.states:V',
+               'Time (s)', 'Speed (kt)'),
+              ('traj.rotation.timeseries.time', 'traj.rotation.timeseries.states:x',
+               'time (s)', 'Position (m)'),
+              ('traj.rotation.timeseries.time', 'traj.rotation.timeseries.states:mass',
+               'time (s)', 'Mass (kg)'),
+              ('traj.rotation.timeseries.time', 'traj.rotation.timeseries.states:theta',
+               'time (s)', 'Pitch angle (deg)'),
+              ('traj.rotation.timeseries.time', 'traj.rotation.timeseries.states:q',
+               'time (s)', 'Pitch rate (deg/s)'),
+              ],
+             title='Rotation',
+             p_sol=p, p_sim=sim_out)
+
+plot_results([('traj.transition.timeseries.time', 'traj.transition.timeseries.states:V',
+               'Time (s)', 'Speed (kt)'),
+              ('traj.transition.timeseries.time', 'traj.transition.timeseries.states:x',
+               'time (s)', 'Position (m)'),
+              ('traj.transition.timeseries.time', 'traj.transition.timeseries.states:h',
+               'time (s)', 'Height (ft)'),
+              ('traj.transition.timeseries.time', 'traj.transition.timeseries.states:mass',
+               'time (s)', 'Mass (kg)'),
+              ('traj.transition.timeseries.time', 'traj.transition.timeseries.states:theta',
+               'time (s)', 'theta (deg)'),
+              ('traj.transition.timeseries.time', 'traj.transition.timeseries.states:q',
+               'time (s)', 'q (deg/s)'),
+              ('traj.transition.timeseries.time', 'traj.transition.timeseries.states:gam',
+               'time (s)', 'gamma (deg)'),
+              ],
+             title='Transition',
+             p_sol=p, p_sim=sim_out)
+
+plot_results([('traj.initialrun.timeseries.time', 'traj.initialrun.timeseries.CL',
+               'Time (s)', 'Initial Run'),
+              ('traj.rotation.timeseries.time', 'traj.rotation.timeseries.CL',
+               'Time (s)', 'Rotation'),
+              ('traj.transition.timeseries.time', 'traj.transition.timeseries.CL',
+               'Time (s)', 'Transition'),
+              ],
+             title='Lift Coefficent',
+             p_sol=p, p_sim=sim_out)
+plot_results([('traj.initialrun.timeseries.time', 'traj.initialrun.timeseries.parameters:de',
+               'Time (s)', 'Initial Run'),
+              ('traj.rotation.timeseries.time', 'traj.rotation.timeseries.controls:de',
+               'Time (s)', 'Rotation'),
+              ('traj.transition.timeseries.time', 'traj.transition.timeseries.controls:de',
+               'Time (s)', 'Transition'),
+              ],
+             title='Elevator Deflection',
+             p_sol=p, p_sim=sim_out)
+plot_results([('traj.transition.timeseries.time', 'traj.transition.timeseries.alpha',
+               'Time (s)', 'Alpha'),],
+             title='Alpha Transition',
+             p_sol=p, p_sim=sim_out)
+"""
 time_driver = {
     'initialrun': p.get_val('traj.initialrun.timeseries.time'),
     'rotation': p.get_val('traj.rotation.timeseries.time'),
@@ -404,3 +478,4 @@ plt.plot(time_sim['rotation'], sim_out.get_val(f"traj.rotation.timeseries.f_mg")
 plt.legend(loc='lower center', ncol=2)
 plt.grid()
 plt.show()
+"""

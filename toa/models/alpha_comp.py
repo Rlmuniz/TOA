@@ -1,7 +1,6 @@
 import numpy as np
 import openmdao.api as om
 
-
 class AlphaComp(om.ExplicitComponent):
     """Computes thrust ratio considering effects of altitude and speed."""
 

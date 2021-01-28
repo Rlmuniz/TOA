@@ -34,6 +34,8 @@ class TransitionOEM(om.ExplicitComponent):
         self.add_input(name='Vw', val=0.0,
                        desc='Wind speed along the runway, defined as positive for a headwind',
                        units='m/s')
+
+
         self.add_output(name='v_dot', val=np.zeros(nn), desc='Body x axis acceleration',
                         units='m/s**2')
         self.add_output(name='gam_dot', val=np.zeros(nn), desc='Flight path angle rate',
