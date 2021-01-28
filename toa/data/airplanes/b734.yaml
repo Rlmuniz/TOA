@@ -9,19 +9,22 @@ wing:
   area: 91.04
   span: 28.88
   mac: 3.73
-  sweep_14: 25.02
+  sweep_14: 25
   sweep_12: 22.02
-  sweep_le: 27.85
+  sweep_le: 27
   t_c: 0.129
 
 flap:
   type: triple-slotted
-  area: 13.66
+  area: 18.208
   bf_b: 0.72
   sf_s: 0.20
-  cf_c_flap: 0.20
-  cf_c_slat: 0.15
+  cf_c: 0.20
   lambda_f: 0.90
+
+slat:
+  cs_c: 0.15
+  bs_b: 0.72
 
 limits:
   MTOW: 396800
@@ -57,8 +60,11 @@ inertia:
   iy: 41352447.838
 
 coeffs:
-  CL0: 0.92
-  CLa: 5.67
+  cla: 7.4905
+  CL0: 0.1197
+  CLa: 5.4681
+  alpha_max: 13.5
+  CLmax: 1.4156
   CLde: 0.36
   CLih: 0.75
   CLq: 5.65
