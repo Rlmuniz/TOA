@@ -1,12 +1,11 @@
 import openmdao.api as om
 import dymos as dm
-import matplotlib.pyplot as plt
+
 from dymos.examples.plotting import plot_results
 
 from toa.data import get_airplane_data
 from toa.ode.initialrun_ode import InitialRunODE
 from toa.ode.rotation_ode import RotationODE
-from toa.ode.transition_ode import TransitionODE
 
 from toa.runway import Runway
 
@@ -16,12 +15,12 @@ p = om.Problem(model=om.Group())
 p.driver = om.pyOptSparseDriver()
 p.driver.options['optimizer'] = 'SLSQP'
 
-runway = Runway(2200, 0.0, 0.0, 0.0, 0.0)
-airplane = get_airplane_data('b744')
+runway = Runway(3500, 0.0, 0.0, 0.0, 0.0)
+airplane = get_airplane_data('b734')
 
 traj = p.model.add_subsystem('traj', dm.Trajectory())
 initialrun = dm.Phase(ode_class=InitialRunODE,
-                      transcription=dm.GaussLobatto(num_segments=20),
+                      transcription=dm.Radau(num_segments=20),
                       ode_init_kwargs={'airplane': airplane})
 traj.add_phase(name='initialrun', phase=initialrun)
 

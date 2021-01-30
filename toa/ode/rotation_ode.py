@@ -6,6 +6,7 @@ from toa.data import Airplane
 from toa.models.aero.aerodynamics import AerodynamicsGroup
 from toa.models.alpha_comp import AlphaComp
 from toa.models.eom.rotation_eom import RotationEOM
+from toa.models.main_landing_gear_pos import MainLandingGearPosComp
 from toa.models.propulsion.propulsion_group import PropulsionGroup
 from toa.models.true_airspeed_comp import TrueAirspeedCompGroundRoll
 
@@ -62,5 +63,8 @@ class RotationODE(om.Group):
         self.connect('aero.D', 'rotation_eom.drag')
         self.connect('aero.M', 'rotation_eom.moment')
         self.connect('assumptions.grav', 'rotation_eom.grav')
+
+        self.add_subsystem(name='mlg_pos',
+                           subsys=MainLandingGearPosComp(num_nodes=nn, airplane=airplane))
 
         self.set_input_defaults('elevation', val=0.0, units='m')

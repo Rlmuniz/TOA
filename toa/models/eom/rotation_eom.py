@@ -28,6 +28,7 @@ class RotationEOM(om.ExplicitComponent):
         self.add_input(name='alpha', val=np.zeros(nn), desc='Angle of attack',
                        units='rad')
         self.add_input(name='q', val=np.zeros(nn), desc='Pitch rate', units='rad/s')
+        self.add_input(name='x_mlg', val=np.zeros(nn), desc='X mlg distance from brake release', units='m')
         self.add_input(name='rw_slope', val=0.0, desc='Runway slope', units='rad')
         self.add_input(name='grav', val=0.0, desc='Gravity acceleration',
                        units='m/s**2')
@@ -46,11 +47,11 @@ class RotationEOM(om.ExplicitComponent):
         self.add_output(name='f_mg', val=np.zeros(nn), desc='Main wheel reaction force',
                         units='N')
 
-        self.declare_partials(of='x_dot', wrt='V', rows=ar, cols=ar, val=1.0)
-        self.declare_partials(of='x_dot', wrt='Vw', rows=ar, cols=np.zeros(nn), val=-1.0)
         self.declare_partials(of='v_dot', wrt=['*'], method='fd')
-        self.declare_partials(of='theta_dot', wrt='q', rows=ar, cols=ar, val=1.0)
+        self.declare_partials(of='x_dot', wrt=['*'], method='fd')
+        self.declare_partials(of='h_dot', wrt=['*'], method='fd')
         self.declare_partials(of='q_dot', wrt=['*'], method='fd')
+        self.declare_partials(of='theta_dot', wrt='q', rows=ar, cols=ar, val=1.0)
         self.declare_partials(of='f_mg', wrt=['*'], method='fd')
 
     def compute(self, inputs, outputs, **kwargs):
@@ -65,21 +66,24 @@ class RotationEOM(om.ExplicitComponent):
         grav = inputs['grav']
         rw_slope = inputs['rw_slope']
         Vw = inputs['Vw']
+        x_mlg = inputs['x_mlg']
         airplane = self.options['airplane']
 
-        mu = 0.002
+        mu = 0.025
         xmg = airplane.landing_gear.main.x
         weight = mass * grav
         cosslope = np.cos(rw_slope)
         sinslope = np.sin(rw_slope)
         cosalpha = np.cos(alpha)
+        sinalpha = np.sin(alpha)
 
         f_mg = weight * cosslope - lift
         f_rr = mu * f_mg
-        m_mg = - xmg * f_mg
+        m_mg = - x_mlg * f_mg
 
         outputs['v_dot'] = (thrust * cosalpha - drag - f_rr - weight * sinslope) / mass
-        outputs['x_dot'] = V - Vw
+        outputs['x_dot'] = V - Vw - q * xmg * sinalpha
+        outputs['h_dot'] = q * xmg * cosalpha
         outputs['q_dot'] = (moment + m_mg) / airplane.inertia.iy
         outputs['theta_dot'] = q
         outputs['f_mg'] = f_mg
