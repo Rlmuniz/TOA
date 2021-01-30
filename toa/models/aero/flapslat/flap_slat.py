@@ -34,7 +34,7 @@ def _calc_flap_2d(dflap: float, airplane: Airplane):
     return dcl, dcl_max, cla_2d_flap
 
 def _calc_slat_2d(dslat: float, airplane: Airplane):
-    le_eff = interp1d([0, .1, .15, .2, .25], [0, 1.636e-3, 2.783e-3, 4.588e-3, 7.2195],
+    le_eff = interp1d([0, .1, .15, .2, .25], [0, 1.636e-3, 2.783e-3, 4.588e-3, 7.2195e-3],
                       kind='cubic')(airplane.slat.cs_c)
     dcl_slat = le_eff * clinha_c * dslat
     cl_max_base = interp1d([0, .05, .1, .15, .2, .25],

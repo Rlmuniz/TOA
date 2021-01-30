@@ -64,7 +64,7 @@ class InitialRunEOM(om.ExplicitComponent):
         Vw = inputs['Vw']
         airplane = self.options['airplane']
 
-        mu_mg = 0.002
+        mu_mg = 0.025
         mu_ng = mu_mg
 
         xmg = airplane.landing_gear.main.x
