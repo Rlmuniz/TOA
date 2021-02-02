@@ -105,7 +105,38 @@ rotation.add_timeseries_output('rotation_eom.f_mg', units='kN')
 rotation.add_timeseries_output('prop.thrust', units='kN')
 rotation.add_timeseries_output('prop.m_dot', units='kg/s')
 
-# Trajectory parameters
+## ----------------------------------- Transition --------------------------------------
+transition = dm.Phase(ode_class=RotationODE, transcription=dm.Radau(num_segments=10),
+                    ode_init_kwargs={'airplane': airplane})
+traj.add_phase(name='transition', phase=transition)
+
+transition.set_time_options(fix_initial=False, units='s')
+
+# states
+transition.add_state(name='V', units='kn', rate_source='transition_eom.v_dot',
+                     targets=['V'], fix_initial=False, fix_final=False, lower=0)
+transition.add_state(name='x', units='m', rate_source='transition_eom.x_dot',
+                     targets=['mlg_pos.x'], fix_initial=False, fix_final=False, lower=0)
+transition.add_state(name='h', units='m', rate_source='transition_eom.h_dot',
+                     targets=['mlg_pos.h'], fix_initial=False, fix_final=False)
+transition.add_state(name='mass', units='kg', rate_source='prop.m_dot', targets=['mass'],
+                     fix_initial=False, fix_final=False, lower=0.0)
+transition.add_state(name='theta', units='deg', rate_source='transition_eom.theta_dot',
+                     targets=['theta'],
+                     fix_initial=False, fix_final=False, lower=0.0)
+transition.add_state(name='gam', units='deg', rate_source='transition_eom.gam_dot',
+                     targets=['gam'],
+                     fix_initial=True, fix_final=False, lower=0.0)
+transition.add_state(name='q', units='deg/s', rate_source='transition_eom.q_dot',
+                     targets=['q'], fix_initial=False, fix_final=False, lower=0.0)
+
+# controls
+rotation.add_polynomial_control(name='de', order=1, units='deg', lower=-30.0, upper=30.0, targets=['aero.de'], opt=True, val=0.0)
+
+# path constraints
+rotation.add_path_constraint(name='aero.CL', lower=0, units=None)
+#---------------------------------------------------------------------------------------
+#Trajectory parameters
 traj.add_parameter(name='dih', val=0.0, units='deg', lower=-10.0, upper=10.0,
                    desc='Horizontal stabilizer angle',
                    targets={
