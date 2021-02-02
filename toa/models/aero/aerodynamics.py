@@ -57,19 +57,6 @@ class AerodynamicsGroup(om.Group):
         self.connect('flap_slat.CL0', 'cl_comp.CL0')
         self.connect('flap_slat.CLa', 'cl_comp.CLa')
 
-        self.add_subsystem(name='clmax_cl',
-                           subsys=om.ExecComp('diff = CLmax - CL',
-                                              CLmax={'value': 0.0, 'units': None},
-                                              CL={'value': np.zeros(nn), 'units': None}),
-                           promotes_inputs=['CLmax', 'CL'])
-
-        self.add_subsystem(name='alphamax_alpha',
-                           subsys=om.ExecComp('diff = alpha_max - alpha',
-                                              alpha_max={'value': 0.0, 'units': 'deg'},
-                                              alpha={'value': 0.0, 'units': 'deg'}),
-                           promotes_inputs=['alpha'])
-        self.connect('flap_slat.alpha_max', 'alphamax_alpha.alpha_max')
-
         self.add_subsystem(name='cd_comp',
                            subsys=DragCoeffComp(num_nodes=nn, airplane=airplane,
                                                 landing_gear=landing_gear),
@@ -87,4 +74,4 @@ class AerodynamicsGroup(om.Group):
                            promotes_inputs=['CL', 'CD', 'Cm', 'qbar'],
                            promotes_outputs=['L', 'D', 'M'])
 
-        self.set_input_defaults('alpha', val=np.zeros(nn), units='deg')
+        self.set_input_defaults('flap_angle', val=0.0, units='deg')

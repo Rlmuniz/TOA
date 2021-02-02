@@ -27,37 +27,37 @@ slat:
   bs_b: 0.72
 
 limits:
-  MTOW: 396800
+  MTOW: 68000
 
 engine:
   type: turbofan
   mount: wing
-  num_motors: 4
-  name: PW4062
-  max_thrust_sl: 275800
-  bypass_ratio: 4.6
+  num_motors: 2
+  name: CFM56-3B-2
+  max_thrust_sl: 98300
+  bypass_ratio: 5.1
   zpos: 0
-  cff1: 2.88943
-  cff2: -2.16939
-  cff3: 2.00708
+  cff1: 1.26847
+  cff2: -0.732308
+  cff3: 0.523854
 
 polar:
-  CD0: 0.021
-  k: 0.049
-  e: 0.816
+  CD0: 0.020
+  k: 0.044
+  e: 0.793
 
 landing_gear:
   main:
-    x: 4
+    x: 1
     z: 3
     number: 1
   nose:
-    x: 28
+    x: 13.00
     z: 3
     number: 1
 
 inertia:
-  iy: 41352447.838
+  iy: 2765146
 
 coeffs:
   cla: 7.4905

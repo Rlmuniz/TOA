@@ -28,7 +28,6 @@ class RotationEOM(om.ExplicitComponent):
         self.add_input(name='alpha', val=np.zeros(nn), desc='Angle of attack',
                        units='rad')
         self.add_input(name='q', val=np.zeros(nn), desc='Pitch rate', units='rad/s')
-        self.add_input(name='x_mlg', val=np.zeros(nn), desc='X mlg distance from brake release', units='m')
         self.add_input(name='rw_slope', val=0.0, desc='Runway slope', units='rad')
         self.add_input(name='grav', val=0.0, desc='Gravity acceleration',
                        units='m/s**2')
@@ -36,7 +35,9 @@ class RotationEOM(om.ExplicitComponent):
                        desc='Wind speed along the runway, defined as positive for a headwind',
                        units='m/s')
 
-        self.add_output(name='x_dot', val=np.zeros(nn), desc='Derivative of position',
+        self.add_output(name='x_dot', val=np.zeros(nn), desc='Derivative of horizontal position',
+                        units='m/s')
+        self.add_output(name='h_dot', val=np.zeros(nn), desc='Derivative of vertical position',
                         units='m/s')
         self.add_output(name='v_dot', val=np.zeros(nn), desc="Body x axis acceleration",
                         units='m/s**2')
@@ -66,7 +67,6 @@ class RotationEOM(om.ExplicitComponent):
         grav = inputs['grav']
         rw_slope = inputs['rw_slope']
         Vw = inputs['Vw']
-        x_mlg = inputs['x_mlg']
         airplane = self.options['airplane']
 
         mu = 0.025
@@ -79,7 +79,7 @@ class RotationEOM(om.ExplicitComponent):
 
         f_mg = weight * cosslope - lift
         f_rr = mu * f_mg
-        m_mg = - x_mlg * f_mg
+        m_mg = - xmg * f_mg
 
         outputs['v_dot'] = (thrust * cosalpha - drag - f_rr - weight * sinslope) / mass
         outputs['x_dot'] = V - Vw - q * xmg * sinalpha

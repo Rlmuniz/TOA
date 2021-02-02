@@ -25,11 +25,8 @@ class MainLandingGearPosComp(om.ExplicitComponent):
 
         # Partials
         ar = np.arange(nn)
-        self.declare_partials(of='x_mlg', wrt='x', rows=ar, cols=ar, val=1.0)
-        self.declare_partials(of='x_mlg', wrt='theta', rows=ar, cols=ar)
-
-        self.declare_partials(of='h_mlg', wrt='h', rows=ar, cols=ar, val=1.0)
-        self.declare_partials(of='h_mlg', wrt='theta', rows=ar, cols=ar)
+        self.declare_partials(of='x_mlg', wrt=['*'], method='fd')
+        self.declare_partials(of='h_mlg', wrt=['*'], method='fd')
 
     def compute(self, inputs, outputs, **kwargs):
         airplane = self.options['airplane']
@@ -45,13 +42,3 @@ class MainLandingGearPosComp(om.ExplicitComponent):
 
         outputs['x_mlg'] = x + x2
         outputs['h_mlg'] = h + h2
-
-    def compute_partials(self, inputs, partials, **kwargs):
-        airplane = self.options["airplane"]
-        theta = inputs['theta']
-
-        x1 = -airplane.main.x
-        h1 = -airplane.main.z
-
-        partials['x_mlg', 'theta'] = x1*(-np.sin(theta)) - h1*(np.cos(theta))
-        partials['h_mlg', 'theta'] = x1*(np.cos(theta)) + h1*(-np.sin(theta))
