@@ -5,8 +5,10 @@ from toa.data import Airplane
 from toa.models.aero.aerodynamics import AerodynamicsGroup
 from toa.models.alpha_comp import AlphaComp
 from toa.models.eom.transition_oem import TransitionOEM
+from toa.models.main_landing_gear_pos import MainLandingGearPosComp
 from toa.models.propulsion.propulsion_group import PropulsionGroup
 from toa.models.true_airspeed_comp import TrueAirspeedComp
+from toa.models.v_vs_comp import VVstallRatioComp
 
 
 class TransitionODE(om.Group):
@@ -66,3 +68,17 @@ class TransitionODE(om.Group):
         self.connect('aero.M', 'transition_eom.moment')
         self.connect('assumptions.grav', 'transition_eom.grav')
         self.connect('alpha_comp.alpha', 'transition_eom.alpha')
+
+        self.add_subsystem(name='mlg_pos',
+                           subsys=MainLandingGearPosComp(num_nodes=nn,
+                                                         airplane=airplane),
+                           promotes_inputs=['theta'])
+
+        self.add_subsystem(name='v_vs_comp', subsys=VVstallRatioComp(num_nodes=nn, airplane=airplane),
+                           promotes_inputs=['mass', 'V'])
+
+        self.connect('aero.CLmax', 'v_vs_comp.CLmax')
+        self.connect('assumptions.grav', 'v_vs_comp.grav')
+        self.connect('atmos.rho', 'v_vs_comp.rho')
+
+        self.set_input_defaults('elevation', val=0.0, units='m')
