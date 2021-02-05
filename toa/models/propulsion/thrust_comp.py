@@ -3,6 +3,7 @@ import numpy as np
 import openmdao.api as om
 
 from toa.data import Airplane
+from toa.data import get_airplane_data
 
 
 class ThrustComp(om.ExplicitComponent):
@@ -21,9 +22,9 @@ class ThrustComp(om.ExplicitComponent):
         nn = self.options['num_nodes']
 
         # Inputs
-        self.add_input(name='p_amb', shape=(1,), desc='Atmospheric pressure',
+        self.add_input(name='p_amb', val=np.zeros(nn), desc='Atmospheric pressure',
                        units='Pa')
-        self.add_input(name='mach', shape=(nn,), desc='Mach number', units=None)
+        self.add_input(name='mach', val=np.zeros(nn), desc='Mach number', units=None)
 
         # Outputs
         self.add_output(name='thrust_ratio', val=np.zeros(nn),
@@ -32,11 +33,11 @@ class ThrustComp(om.ExplicitComponent):
         self.add_output(name='thrust', val=np.zeros(nn),
                         desc='Thrust at current altitude and speed', units='N')
 
-        self.declare_partials(of='thrust_ratio', wrt=['*'], method='fd')
+        self.declare_partials(of='thrust_ratio', wrt='p_amb', method='fd')
         self.declare_partials(of='thrust', wrt=['*'], method='fd')
 
     def compute(self, inputs, outputs, **kwargs):
-        p_amb, = inputs['p_amb']
+        p_amb = inputs['p_amb']
         mach = inputs['mach']
         ap = self.options['airplane']
 
@@ -63,3 +64,51 @@ class ThrustComp(om.ExplicitComponent):
 
         outputs['thrust_ratio'] = T_T0
         outputs['thrust'] = T_T0 * ap.engine.max_thrust_sl * num_motors
+
+    def compute_partials(self, inputs, partials, **kwargs):
+        ap = self.options['airplane']
+        p_amb = inputs['p_amb']
+        mach = inputs['mach']
+
+        p_amb_sl = 101325.0
+        press_ratio = p_amb / p_amb_sl
+
+        multiplier = 1.0 if self.options['throttle'] == 'takeoff' else 0.07
+
+        if self.options['condition'] == 'AEO':
+            num_motors = ap.engine.num_motors
+        else:
+            num_motors = ap.engine.num_motors - 1
+
+        bpr = ap.engine.bypass_ratio
+        max_thrust_sl = ap.engine.max_thrust_sl
+
+        G0 = 0.0606 * bpr + 0.6337
+        k1 = 0.377 * (1 + bpr) / np.sqrt((1 + 0.82 * bpr) * G0)
+        k2 = 0.23 + 0.19 * np.sqrt(bpr)
+
+        partials['thrust_ratio', 'p_amb'] = -multiplier * (mach * (
+                k1 * (2.7318 * p_amb ** 2 - 3.5472 * p_amb * p_amb_sl + 1.8697 * p_amb_sl ** 2) - k2 * mach * (
+                0.4131 * p_amb ** 2 - 0.8748 * p_amb * p_amb_sl + 1.3003 * p_amb_sl ** 2))
+                                                           + 0.8654 * p_amb * p_amb_sl
+                                                           - 1.3855 * p_amb_sl ** 2) / p_amb_sl ** 3
+        partials['thrust_ratio', 'mach'] = -multiplier * p_amb * (
+                k1 * (0.9106 * p_amb ** 2 - 1.7736 * p_amb * p_amb_sl + 1.8697 * p_amb_sl ** 2) - 2 * k2 * mach * (
+                0.1377 * p_amb ** 2 - 0.4374 * p_amb * p_amb_sl + 1.3003 * p_amb_sl ** 2)) / p_amb_sl ** 3
+
+        partials['thrust', 'p_amb'] = max_thrust_sl * num_motors * partials['thrust_ratio', 'p_amb']
+        partials['thrust', 'mach'] = max_thrust_sl * num_motors * partials['thrust_ratio', 'mach']
+
+
+if __name__ == '__main__':
+    prob = om.Problem()
+    airplane = get_airplane_data('b734')
+    num_nodes = 1
+    prob.model.add_subsystem('comp', ThrustComp(num_nodes=1, airplane=airplane))
+
+    prob.set_solver_print(level=0)
+
+    prob.setup()
+    prob.run_model()
+
+    prob.check_partials(compact_print=True, show_only_incorrect=True)

@@ -1,6 +1,6 @@
 import openmdao.api as om
 from scipy.interpolate import interp1d
-from scipy.constants import  degree
+from scipy.constants import degree
 import numpy as np
 
 from toa.data import Airplane
@@ -24,6 +24,7 @@ class FlapSlatComp(om.ExplicitComponent):
 
     def initialize(self):
         self.options.declare('airplane', types=Airplane, desc='Class containing all airplane data')
+        self.options.declare('partial_coloring', types=bool, default=False)
 
     def setup(self):
         airplane = self.options['airplane']
@@ -39,6 +40,10 @@ class FlapSlatComp(om.ExplicitComponent):
         self.declare_partials(of='CLmax', wrt='flap_angle', method='fd')
         self.declare_partials(of='CLa', wrt='flap_angle', method='fd')
         self.declare_partials(of='alpha_max', wrt='flap_angle', method='fd')
+
+        if self.options['partial_coloring']:
+            self.declare_coloring(wrt=['*'], method='fd', tol=1.0E-6, num_full_jacs=2,
+                                  show_summary=True, show_sparsity=True, min_improve_pct=10.)
 
     def _calc_flap2D(self, flap_angle, airplane, clinha_c=1.075):
         alpha_delta = interp1d(flap_alfadelta_x, flap_alfadelta_y, kind='cubic')(flap_angle)
@@ -75,7 +80,7 @@ class FlapSlatComp(om.ExplicitComponent):
         kb = interp1d(flap_kb_x, flap_kb_y, kind='cubic')(airplane.slat.bs_b)
         dCL_slat = kb * dcl_slat * airplane.coeffs.CLa / airplane.coeffs.cla * 1.0526
         dCLmax_slat = 7.11 * airplane.slat.cs_c * 0.8268 ** 2 * np.cos(
-            airplane.wing.sweep_14 * degree) ** 2
+                airplane.wing.sweep_14 * degree) ** 2
         return dCL_slat, dCLmax_slat
 
     def compute(self, inputs, outputs, **kwargs):

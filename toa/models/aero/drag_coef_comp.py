@@ -11,8 +11,7 @@ class DragCoeffComp(om.ExplicitComponent):
         self.options.declare('num_nodes', types=int)
         self.options.declare('airplane', types=Airplane,
                              desc='Class containing all  data')
-        self.options.declare('landing_gear', default=True,
-                             desc='Accounts landing gear drag')
+        self.options.declare('partial_coloring', types=bool, default=False)
 
     def setup(self):
         nn = self.options['num_nodes']
@@ -28,6 +27,10 @@ class DragCoeffComp(om.ExplicitComponent):
 
         self.declare_partials(of='CD', wrt=['*'], method='fd')
 
+        if self.options['partial_coloring']:
+            self.declare_coloring(wrt=['*'], method='fd', tol=1.0E-6, num_full_jacs=2,
+                                  show_summary=True, show_sparsity=True, min_improve_pct=10.)
+
     def compute(self, inputs, outputs, **kwargs):
         fa = inputs['flap_angle']
         CL = inputs['CL']
@@ -37,12 +40,10 @@ class DragCoeffComp(om.ExplicitComponent):
         ap = self.options['airplane']
 
         delta_cd_flap = (
-                    ap.flap.lambda_f * ap.flap.cf_c ** 1.38 * ap.flap.sf_s * np.sin(
-                fa) ** 2)
+                ap.flap.lambda_f * ap.flap.cf_c ** 1.38 * ap.flap.sf_s * np.sin(fa) ** 2)
 
         if self.options['landing_gear']:
-            delta_cd_gear = (mass * grav) / ap.wing.area * 3.16e-5 * ap.limits.MTOW ** (
-                -0.215)
+            delta_cd_gear = (mass * grav) / ap.wing.area * 3.16e-5 * ap.limits.MTOW ** (-0.215)
         else:
             delta_cd_gear = 0
 

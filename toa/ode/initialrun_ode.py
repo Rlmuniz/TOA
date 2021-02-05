@@ -4,7 +4,6 @@ from dymos.models.atmosphere import USatm1976Comp
 
 from toa.data import Airplane
 from toa.models.aero.aerodynamics import AerodynamicsGroup
-from toa.models.alpha_comp import AlphaComp
 from toa.models.eom.initialrun_eom import InitialRunEOM
 from toa.models.main_landing_gear_pos import MainLandingGearPosComp
 from toa.models.propulsion.propulsion_group import PropulsionGroup
