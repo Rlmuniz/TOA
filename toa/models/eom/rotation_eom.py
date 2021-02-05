@@ -48,7 +48,15 @@ class RotationEOM(om.ExplicitComponent):
         self.add_output(name='f_mg', val=np.zeros(nn), desc='Main wheel reaction force',
                         units='N')
 
-        self.declare_partials(of='v_dot', wrt=['*'], method='fd')
+        self.declare_partials(of='v_dot', wrt='thrust', method='fd')
+        self.declare_partials(of='v_dot', wrt='alpha', method='fd')
+        self.declare_partials(of='v_dot', wrt='drag', method='fd')
+        self.declare_partials(of='v_dot', wrt='mass', method='fd')
+        self.declare_partials(of='v_dot', wrt='grav', method='fd')
+        self.declare_partials(of='v_dot', wrt='lift', method='fd')
+        self.declare_partials(of='v_dot', wrt='rw_slope', method='fd')
+
+
         self.declare_partials(of='x_dot', wrt=['*'], method='fd')
         self.declare_partials(of='h_dot', wrt=['*'], method='fd')
         self.declare_partials(of='q_dot', wrt=['*'], method='fd')
@@ -87,3 +95,26 @@ class RotationEOM(om.ExplicitComponent):
         outputs['q_dot'] = (moment + m_mg) / airplane.inertia.iy
         outputs['theta_dot'] = q
         outputs['f_mg'] = f_mg
+
+    def compute_partials(self, inputs, partials, **kwargs):
+        alpha = inputs['alpha']
+        mass = inputs['mass']
+        thrust = inputs['thrust']
+        lift = inputs['lift']
+        drag = inputs['drag']
+        rw_slope = inputs['rw_slope']
+        grav = inputs['grav']
+
+        mu = 0.025
+        cosalpha = np.cos(alpha)
+        sinalpha = np.sin(alpha)
+        cosslope = np.cos(rw_slope)
+        sinslope = np.sin(rw_slope)
+
+        partials['v_dot', 'thrust'] = cosalpha / mass
+        partials['v_dot', 'alpha'] = -thrust * sinalpha / mass
+        partials['v_dot', 'drag'] = -1 / mass
+        partials['v_dot', 'mass'] = (drag - lift * mu - thrust * cosalpha) / mass ** 2
+        partials['v_dot', 'grav'] = -mu * cosslope - sinslope
+        partials['v_dot', 'lift'] = mu / mass
+        partials['v_dot', 'rw_slope'] = grav * (mu * sinslope - cosslope)
