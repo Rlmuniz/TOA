@@ -30,7 +30,7 @@ class AerodynamicsGroup(om.Group):
         all_wheels_on_ground = self.options['AllWheelsOnGround']
 
         self.add_subsystem(name='flap_slat',
-                           subsys=FlapSlatComp(airplane=airplane),
+                           subsys=FlapSlatComp(airplane=airplane, partial_coloring=True),
                            promotes_inputs=['flap_angle'], promotes_outputs=['CLmax'])
 
         if all_wheels_on_ground:
@@ -59,7 +59,7 @@ class AerodynamicsGroup(om.Group):
 
         self.add_subsystem(name='cd_comp',
                            subsys=DragCoeffComp(num_nodes=nn, airplane=airplane,
-                                                landing_gear=landing_gear),
+                                                landing_gear=landing_gear, partial_coloring=True),
                            promotes_inputs=['flap_angle', 'CL', 'grav', 'mass'],
                            promotes_outputs=['CD'])
 

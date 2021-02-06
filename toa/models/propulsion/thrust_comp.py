@@ -20,10 +20,11 @@ class ThrustComp(om.ExplicitComponent):
 
     def setup(self):
         nn = self.options['num_nodes']
+        ar = np.arange(nn)
+        zz = np.zeros(nn)
 
         # Inputs
-        self.add_input(name='p_amb', val=np.zeros(nn), desc='Atmospheric pressure',
-                       units='Pa')
+        self.add_input(name='p_amb', val=0.0, desc='Atmospheric pressure', units='Pa')
         self.add_input(name='mach', val=np.zeros(nn), desc='Mach number', units=None)
 
         # Outputs
@@ -33,8 +34,11 @@ class ThrustComp(om.ExplicitComponent):
         self.add_output(name='thrust', val=np.zeros(nn),
                         desc='Thrust at current altitude and speed', units='N')
 
-        self.declare_partials(of='thrust_ratio', wrt='p_amb', method='fd')
-        self.declare_partials(of='thrust', wrt=['*'], method='fd')
+        self.declare_partials(of='thrust_ratio', wrt='p_amb', rows=ar, cols=zz)
+        self.declare_partials(of='thrust_ratio', wrt='mach', rows=ar, cols=ar)
+
+        self.declare_partials(of='thrust', wrt='p_amb', rows=ar, cols=zz)
+        self.declare_partials(of='thrust', wrt='mach', rows=ar, cols=ar)
 
     def compute(self, inputs, outputs, **kwargs):
         p_amb = inputs['p_amb']
@@ -71,7 +75,6 @@ class ThrustComp(om.ExplicitComponent):
         mach = inputs['mach']
 
         p_amb_sl = 101325.0
-        press_ratio = p_amb / p_amb_sl
 
         multiplier = 1.0 if self.options['throttle'] == 'takeoff' else 0.07
 

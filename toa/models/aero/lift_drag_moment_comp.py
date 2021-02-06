@@ -2,6 +2,7 @@ import numpy as np
 import openmdao.api as om
 
 from toa.data import Airplane
+from toa.data import get_airplane_data
 
 
 class LiftDragMomentComp(om.ExplicitComponent):
@@ -14,16 +15,18 @@ class LiftDragMomentComp(om.ExplicitComponent):
     def setup(self):
         nn = self.options['num_nodes']
         ar = np.arange(nn)
+        zz = np.zeros(nn)
+        ones = np.ones(nn)
 
-        self.add_input(name='CL', shape=(nn,), desc='Lift coefficient', units=None)
-        self.add_input(name='CD', shape=(nn,), desc='Drag coefficient', units=None)
-        self.add_input(name='Cm', shape=(nn,), desc='Moment coefficient', units=None)
-        self.add_input(name='qbar', shape=(nn,), desc='Dynamic pressure', units='Pa')
+        self.add_input(name='CL', val=ones, desc='Lift coefficient', units=None)
+        self.add_input(name='CD', val=ones, desc='Drag coefficient', units=None)
+        self.add_input(name='Cm', val=ones, desc='Moment coefficient', units=None)
+        self.add_input(name='qbar', val=ones, desc='Dynamic pressure', units='Pa')
 
         # Outputs
-        self.add_output(name='L', shape=(nn,), desc='Lift coefficient', units='N')
-        self.add_output(name='D', shape=(nn,), desc='Drag coefficient', units='N')
-        self.add_output(name='M', shape=(nn,), desc='Moment coefficient', units='N*m')
+        self.add_output(name='L', val=zz, desc='Lift coefficient', units='N')
+        self.add_output(name='D', val=zz, desc='Drag coefficient', units='N')
+        self.add_output(name='M', val=zz, desc='Moment coefficient', units='N*m')
 
         self.declare_partials(of='L', wrt='CL', rows=ar, cols=ar)
         self.declare_partials(of='L', wrt='qbar', rows=ar, cols=ar)
@@ -55,3 +58,17 @@ class LiftDragMomentComp(om.ExplicitComponent):
 
         partials['M', 'Cm'] = qS * ap.wing.mac
         partials['M', 'qbar'] = ap.wing.mac * S * inputs['Cm']
+
+
+if __name__ == '__main__':
+    prob = om.Problem()
+    airplane = get_airplane_data('b734')
+    num_nodes = 1
+    prob.model.add_subsystem('comp', LiftDragMomentComp(num_nodes=1, airplane=airplane))
+
+    prob.set_solver_print(level=0)
+
+    prob.setup()
+    prob.run_model()
+
+    prob.check_partials(compact_print=True, show_only_incorrect=True)

@@ -17,9 +17,9 @@ class MainLandingGearPosComp(om.ExplicitComponent):
         ones = np.ones(nn)
 
         # Inputs
-        self.add_input(name='x', val=np.zeros(nn), desc='X cg distance from brake release', units='m')
-        self.add_input(name='h', val=np.zeros(nn), desc='H cg distance from runway level', units='m')
-        self.add_input(name='theta', val=np.zeros(nn), desc='Pitch Angle', units='rad')
+        self.add_input(name='x', val=ones, desc='X cg distance from brake release', units='m')
+        self.add_input(name='h', val=ones, desc='H cg distance from runway level', units='m')
+        self.add_input(name='theta', val=ones, desc='Pitch Angle', units='rad')
 
         # Outputs
         self.add_output(name='x_mlg', val=np.zeros(nn), desc='X mlg distance from brake release', units='m')
