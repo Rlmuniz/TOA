@@ -15,7 +15,7 @@ class MachComp(om.ExplicitComponent):
         ones = np.ones(nn)
 
         self.add_input(name='tas', val=ones, desc='True airspeed', units='m/s')
-        self.add_input(name='sos', val=ones, desc='Atmospheric speed of sound',
+        self.add_input(name='sos', val=1.0, desc='Atmospheric speed of sound',
                        units='m/s')
 
         self.add_output(name='mach', val=ones, desc='Mach number', units=None)

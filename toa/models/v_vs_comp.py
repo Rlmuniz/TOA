@@ -16,11 +16,11 @@ class VVstallRatioComp(om.ExplicitComponent):
         zz = np.zeros(nn)
         ones = np.ones(nn)
 
-        self.add_input(name='CLmax', val=ones, desc='Max Lift Coefficient', units=None)
+        self.add_input(name='CLmax', val=1.0, desc='Max Lift Coefficient', units=None)
         self.add_input(name='mass', val=ones, desc='Airplane mass', units='kg')
         self.add_input(name='grav', val=9.80665, units='m/s**2', desc='Gravity acceleration')
         self.add_input(name='V', val=ones, desc='Body x axis velocity', units='m/s')
-        self.add_input(name='rho', val=ones, desc='Atmosphere density', units='kg/m**3')
+        self.add_input(name='rho', val=1.0, desc='Atmosphere density', units='kg/m**3')
 
         self.add_output(name='Vstall', val=ones, desc='Stall speed', units='m/s')
         self.add_output(name='V_Vstall', val=ones, desc='Ratio between V and Vstall', units=None)

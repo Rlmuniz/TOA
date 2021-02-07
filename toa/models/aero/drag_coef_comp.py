@@ -11,6 +11,7 @@ class DragCoeffComp(om.ExplicitComponent):
         self.options.declare('num_nodes', types=int)
         self.options.declare('airplane', types=Airplane,
                              desc='Class containing all  data')
+        self.options.declare('landing_gear', types=bool, default=True)
         self.options.declare('partial_coloring', types=bool, default=False)
 
     def setup(self):

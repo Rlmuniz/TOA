@@ -30,7 +30,7 @@ class AerodynamicsGroup(om.Group):
         all_wheels_on_ground = self.options['AllWheelsOnGround']
 
         self.add_subsystem(name='flap_slat',
-                           subsys=FlapSlatComp(airplane=airplane, partial_coloring=True),
+                           subsys=FlapSlatComp(airplane=airplane),
                            promotes_inputs=['flap_angle'], promotes_outputs=['CLmax'])
 
         if all_wheels_on_ground:

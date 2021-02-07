@@ -24,7 +24,6 @@ class FlapSlatComp(om.ExplicitComponent):
 
     def initialize(self):
         self.options.declare('airplane', types=Airplane, desc='Class containing all airplane data')
-        self.options.declare('partial_coloring', types=bool, default=False)
 
     def setup(self):
         airplane = self.options['airplane']
@@ -40,10 +39,6 @@ class FlapSlatComp(om.ExplicitComponent):
         self.declare_partials(of='CLmax', wrt='flap_angle', method='fd')
         self.declare_partials(of='CLa', wrt='flap_angle', method='fd')
         self.declare_partials(of='alpha_max', wrt='flap_angle', method='fd')
-
-        if self.options['partial_coloring']:
-            self.declare_coloring(wrt=['*'], method='fd', tol=1.0E-6, num_full_jacs=2,
-                                  show_summary=True, show_sparsity=True, min_improve_pct=10.)
 
     def _calc_flap2D(self, flap_angle, airplane, clinha_c=1.075):
         alpha_delta = interp1d(flap_alfadelta_x, flap_alfadelta_y, kind='cubic')(flap_angle)

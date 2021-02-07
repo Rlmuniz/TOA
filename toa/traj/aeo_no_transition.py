@@ -4,11 +4,10 @@ import dymos as dm
 from toa.data import get_airplane_data
 from toa.ode.initialrun_ode import InitialRunODE
 from toa.ode.rotation_ode import RotationODE
-from toa.ode.transition_ode import TransitionODE
 from toa.runway import Runway
 
 
-def run_takeoff(airplane, runway, flap_angle=0.0, wind_speed=0.0):
+def run_takeoff_no_transition(airplane, runway, flap_angle=0.0, wind_speed=0.0):
     p = om.Problem(model=om.Group())
 
     p.driver = om.pyOptSparseDriver()
@@ -64,7 +63,7 @@ def run_takeoff(airplane, runway, flap_angle=0.0, wind_speed=0.0):
     initial_run.add_timeseries_output('aero.Cm')
     # --------------------------------------------- Rotation -----------------------------------------------------------
     rotation = dm.Phase(ode_class=RotationODE,
-                        transcription=dm.GaussLobatto(num_segments=10, compressed=False),
+                        transcription=dm.GaussLobatto(num_segments=5, compressed=False),
                         ode_init_kwargs={'airplane': airplane})
     traj.add_phase(name='rotation', phase=rotation)
 
@@ -95,57 +94,18 @@ def run_takeoff(airplane, runway, flap_angle=0.0, wind_speed=0.0):
     # Rotation boundary constraint
     rotation.add_boundary_constraint(name='rotation_eom.f_mg', loc='final', units='N',
                                      lower=0.0, upper=0.5, shape=(1,))
+    rotation.add_boundary_constraint(name='x', loc='final', units='m', upper=runway.tora, shape=(1,))
 
     rotation.add_timeseries_output('rotation_eom.f_mg', units='kN')
     rotation.add_timeseries_output('aero.CL')
     rotation.add_timeseries_output('aero.CD')
     rotation.add_timeseries_output('aero.Cm')
-    # --------------------------------------------- Transition ---------------------------------------------------------
-    transition = dm.Phase(ode_class=TransitionODE, transcription=dm.GaussLobatto(num_segments=10, compressed=False),
-                          ode_init_kwargs={'airplane': airplane})
-    traj.add_phase(name='transition', phase=transition)
-
-    transition.set_time_options(fix_initial=False, units='s', duration_bounds=(5, 20))
-
-    # states
-    transition.add_state(name='V', units='m/s', rate_source='transition_eom.v_dot',
-                         targets=['V'], fix_initial=False, fix_final=False, lower=0, ref=100, defect_ref=100)
-    transition.add_state(name='x', units='m', rate_source='transition_eom.x_dot',
-                         targets=['mlg_pos.x'], fix_initial=False, fix_final=False, lower=0, ref=1000, defect_ref=1000)
-    transition.add_state(name='h', units='m', rate_source='transition_eom.h_dot',
-                         targets=['mlg_pos.h'], fix_initial=False, fix_final=False, ref=10, defect_ref=10)
-    transition.add_state(name='mass', units='kg', rate_source='prop.m_dot', targets=['mass'],
-                         fix_initial=False, fix_final=False, lower=0.0, ref=10000, defect_ref=10000)
-    transition.add_state(name='theta', units='deg', rate_source='transition_eom.theta_dot',
-                         targets=['theta'],
-                         fix_initial=False, fix_final=False, lower=0.0, ref=10, defect_ref=10)
-    transition.add_state(name='gam', units='deg', rate_source='transition_eom.gam_dot',
-                         targets=['gam'],
-                         fix_initial=True, fix_final=False, lower=0.0, ref=10, defect_ref=10)
-    transition.add_state(name='q', units='deg/s', rate_source='transition_eom.q_dot',
-                         targets=['q'], fix_initial=False, fix_final=False, lower=0.0, ref=10, defect_ref=10)
-
-    # controls
-    transition.add_control(name='de', units='deg', lower=-30.0, upper=30.0, targets=['aero.de'], rate_continuity=True,
-                           ref=10)
-
-    # path constraints
-
-    # Boundary Constraint
-    transition.add_boundary_constraint(name='mlg_pos.x_mlg', loc='final', units='m', upper=runway.toda, shape=(1,))
-    transition.add_boundary_constraint(name='mlg_pos.h_mlg', loc='final', units='ft', equals=35.0, shape=(1,))
-    transition.add_boundary_constraint(name='v_vs_comp.V_Vstall', loc='final', units=None, lower=1.2,
-                                       shape=(1,))
-    transition.add_boundary_constraint(name='transition_eom.gam_dot', loc='final', units='rad/s', equals=0.0,
-                                       shape=(1,))
-
     # ---------------------------------------- Trajectory Parameters ---------------------------------------------------
     traj.add_parameter(name='dih', val=0.0, units='deg', lower=-5.0, upper=5.0,
                        desc='Horizontal stabilizer angle',
                        targets={
                            'initial_run': ['aero.dih'],
                            'rotation': ['aero.dih'],
-                           'transition': ['aero.dih']
                            },
                        opt=True, dynamic=False)
     traj.add_parameter(name='Vw', val=0.0, units='m/s',
@@ -153,21 +113,18 @@ def run_takeoff(airplane, runway, flap_angle=0.0, wind_speed=0.0):
                        targets={
                            'initial_run': ['Vw'],
                            'rotation': ['Vw'],
-                           'transition': ['Vw']
                            },
                        opt=False, dynamic=False)
     traj.add_parameter(name='flap_angle', val=0.0, units='deg', desc='Flap defletion',
                        targets={
                            'initial_run': ['aero.flap_angle'],
                            'rotation': ['aero.flap_angle'],
-                           'transition': ['aero.flap_angle'],
                            },
                        opt=False, dynamic=False)
     traj.add_parameter(name='elevation', val=0.0, units='m', desc='Runway elevation',
                        targets={
                            'initial_run': ['elevation'],
                            'rotation': ['elevation'],
-                           'transition': ['elevation'],
                            },
                        opt=False, dynamic=False)
     traj.add_parameter(name='rw_slope', val=0.0, units='rad', desc='Runway slope',
@@ -179,7 +136,6 @@ def run_takeoff(airplane, runway, flap_angle=0.0, wind_speed=0.0):
 
     # ------------------------------------------------ Link Phases -----------------------------------------------------
     traj.link_phases(phases=['initial_run', 'rotation'], vars=['time', 'V', 'x', 'mass'])
-    traj.link_phases(phases=['rotation', 'transition'], vars=['time', 'V', 'x', 'mass', 'h', 'theta', 'q', 'de'])
 
     p.setup(check=True)
 
@@ -187,8 +143,6 @@ def run_takeoff(airplane, runway, flap_angle=0.0, wind_speed=0.0):
     p.set_val('traj.initial_run.t_duration', 60)
     p.set_val('traj.rotation.t_initial', 60)
     p.set_val('traj.rotation.t_duration', 3)
-    p.set_val('traj.transition.t_initial', 63)
-    p.set_val('traj.transition.t_duration', 10)
 
     p.set_val('traj.parameters:elevation', runway.elevation)
     p.set_val('traj.parameters:rw_slope', runway.slope)
@@ -216,33 +170,18 @@ def run_takeoff(airplane, runway, flap_angle=0.0, wind_speed=0.0):
     p['traj.rotation.states:theta'] = rotation.interpolate(ys=[0.0, 15.0], nodes='state_input')
     p['traj.rotation.controls:de'] = rotation.interpolate(ys=[0.0, -20.0], nodes='control_input')
 
-    p['traj.transition.states:x'] = transition.interpolate(
-            ys=[0.8 * runway.tora, runway.toda],
-            nodes='state_input')
-    p['traj.transition.states:V'] = transition.interpolate(ys=[80, 90], nodes='state_input')
-    p['traj.transition.states:mass'] = transition.interpolate(
-            ys=[airplane.limits.MTOW - 200, airplane.limits.MTOW - 300],
-            nodes='state_input')
-    p['traj.transition.states:h'] = transition.interpolate(ys=[airplane.landing_gear.main.z, 35 * 0.3048],
-                                                           nodes='state_input')
-    p['traj.transition.states:q'] = transition.interpolate(ys=[10.0, 5.0], nodes='state_input')
-    p['traj.transition.states:theta'] = transition.interpolate(ys=[10.0, 12.0], nodes='state_input')
-    p['traj.transition.states:gam'] = transition.interpolate(ys=[0.0, 5.0], nodes='state_input')
-
     dm.run_problem(p)
     sim_out = traj.simulate()
 
     print(f"RTOW: {p.get_val('traj.initial_run.timeseries.states:mass', units='kg')[0]} kg")
     print(f"Rotation speed (VR): {p.get_val('traj.initial_run.timeseries.states:V', units='kn')[-1]} kn")
     print(f"Vlof speed (Vlof): {p.get_val('traj.rotation.timeseries.states:V', units='kn')[-1]} kn")
-    print(f"V3 speed (V3): {p.get_val('traj.transition.timeseries.states:V', units='kn')[-1]} kn")
     print(f"Horizontal stabilizer: {p.get_val('traj.parameters:dih')} deg")
 
     return p, sim_out
-
 
 if __name__ == '__main__':
     runway = Runway(3000, 0.0, 0.0, 0.0, 0.0)
     airplane = get_airplane_data('b734')
 
-    sol, sim = run_takeoff(airplane, runway)
+    sol, sim = run_takeoff_no_transition(airplane, runway)
