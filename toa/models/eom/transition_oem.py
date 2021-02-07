@@ -67,19 +67,11 @@ class TransitionOEM(om.ExplicitComponent):
         self.declare_partials(of='gam_dot', wrt='gam', rows=ar, cols=ar)
         self.declare_partials(of='gam_dot', wrt='V', rows=ar, cols=ar)
 
-        self.declare_partials(of='x_dot', wrt='thrust', rows=ar, cols=ar)
-        self.declare_partials(of='x_dot', wrt='alpha', rows=ar, cols=ar)
-        self.declare_partials(of='x_dot', wrt='drag', rows=ar, cols=ar)
-        self.declare_partials(of='x_dot', wrt='mass', rows=ar, cols=ar)
-        self.declare_partials(of='x_dot', wrt='grav', rows=ar, cols=zz)
+        self.declare_partials(of='x_dot', wrt='V', rows=ar, cols=ar)
         self.declare_partials(of='x_dot', wrt='gam', rows=ar, cols=ar)
-        self.declare_partials(of='x_dot', wrt='Vw', rows=ar, cols=zz)
+        self.declare_partials(of='x_dot', wrt='Vw', rows=ar, cols=zz, val=-1.0)
 
-        self.declare_partials(of='h_dot', wrt='thrust', rows=ar, cols=ar)
-        self.declare_partials(of='h_dot', wrt='alpha', rows=ar, cols=ar)
-        self.declare_partials(of='h_dot', wrt='drag', rows=ar, cols=ar)
-        self.declare_partials(of='h_dot', wrt='mass', rows=ar, cols=ar)
-        self.declare_partials(of='h_dot', wrt='grav', rows=ar, cols=zz)
+        self.declare_partials(of='h_dot', wrt='V', rows=ar, cols=ar)
         self.declare_partials(of='h_dot', wrt='gam', rows=ar, cols=ar)
 
         self.declare_partials(of='q_dot', wrt='moment', rows=ar, cols=ar, val=1 / airplane.inertia.iy)
@@ -108,8 +100,8 @@ class TransitionOEM(om.ExplicitComponent):
 
         outputs['v_dot'] = (thrust * cosalpha - drag - weight * singam) / mass
         outputs['gam_dot'] = (thrust * sinalpha + lift - weight * cosgam) / (mass * V)
-        outputs['x_dot'] = outputs['v_dot'] * cosgam - Vw
-        outputs['h_dot'] = outputs['v_dot'] * singam
+        outputs['x_dot'] = V * cosgam - Vw
+        outputs['h_dot'] = V * singam
         outputs['q_dot'] = moment / airplane.inertia.iy
         outputs['theta_dot'] = q
 
@@ -143,21 +135,11 @@ class TransitionOEM(om.ExplicitComponent):
         partials['gam_dot', 'gam'] = grav * singam / V
         partials['gam_dot', 'V'] = (grav * mass * cosgam - lift - thrust * sinalpha) / (V ** 2 * mass)
 
-        partials['x_dot', 'thrust'] = cosalpha * cosgam / mass
-        partials['x_dot', 'alpha'] = -thrust * sinalpha * cosgam / mass
-        partials['x_dot', 'drag'] = -cosgam / mass
-        partials['x_dot', 'mass'] = (drag - thrust * cosalpha) * cosgam / mass ** 2
-        partials['x_dot', 'grav'] = -np.sin(2 * gam) / 2
-        partials['x_dot', 'gam'] = (-grav * mass * cosgam ** 2 + (
-                drag + grav * mass * singam - thrust * cosalpha) * singam) / mass
-        partials['x_dot', 'Vw'] = -1
+        partials['x_dot', 'V'] = cosgam
+        partials['x_dot', 'gam'] = -V*singam
 
-        partials['h_dot', 'thrust'] = singam * cosalpha / mass
-        partials['h_dot', 'alpha'] = -thrust * sinalpha * singam / mass
-        partials['h_dot', 'drag'] = -singam / mass
-        partials['h_dot', 'mass'] = (drag - thrust * cosalpha) * singam / mass ** 2
-        partials['h_dot', 'grav'] = -singam ** 2
-        partials['h_dot', 'gam'] = (-drag - 2 * grav * mass * singam + thrust * cosalpha) * cosgam / mass
+        partials['h_dot', 'V'] = singam
+        partials['h_dot', 'gam'] = V*cosgam
 
 
 if __name__ == '__main__':
