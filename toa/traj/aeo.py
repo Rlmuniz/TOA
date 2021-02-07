@@ -40,13 +40,13 @@ def run_takeoff(airplane, runway, flap_angle=0.0, wind_speed=0.0):
 
     # Initial run parameters
     initial_run.add_parameter(name='de', val=0.0, units='deg', desc='Elevator deflection',
-                              targets=['aero.de'], opt=False)
+                              targets=['aero.de'], opt=False, include_timeseries=True)
     initial_run.add_parameter(name='theta', val=0.0, units='deg', desc='Pitch Angle',
                               targets=['aero.alpha', 'initial_run_eom.alpha',
-                                       'mlg_pos.theta'], opt=False)
+                                       'mlg_pos.theta'], opt=False, include_timeseries=True)
     initial_run.add_parameter(name='h', val=0.0, units='m',
                               desc='Vertical CG position',
-                              targets=['mlg_pos.h'], opt=False)
+                              targets=['mlg_pos.h'], opt=False, include_timeseries=True)
 
     # path constraint
     initial_run.add_path_constraint(name='initial_run_eom.f_mg', lower=0, units='N')
@@ -62,6 +62,10 @@ def run_takeoff(airplane, runway, flap_angle=0.0, wind_speed=0.0):
     initial_run.add_timeseries_output('aero.CL')
     initial_run.add_timeseries_output('aero.CD')
     initial_run.add_timeseries_output('aero.Cm')
+    initial_run.add_timeseries_output('prop.thrust')
+    initial_run.add_timeseries_output('mlg_pos.x_mlg')
+    initial_run.add_timeseries_output('mlg_pos.h_mlg', units='ft')
+
     # --------------------------------------------- Rotation -----------------------------------------------------------
     rotation = dm.Phase(ode_class=RotationODE,
                         transcription=dm.GaussLobatto(num_segments=10, compressed=False),
@@ -97,9 +101,13 @@ def run_takeoff(airplane, runway, flap_angle=0.0, wind_speed=0.0):
                                      lower=0.0, upper=0.5, shape=(1,))
 
     rotation.add_timeseries_output('rotation_eom.f_mg', units='kN')
+    rotation.add_timeseries_output('rotation_eom.h_dot', units='ft/min')
     rotation.add_timeseries_output('aero.CL')
     rotation.add_timeseries_output('aero.CD')
     rotation.add_timeseries_output('aero.Cm')
+    rotation.add_timeseries_output('prop.thrust')
+    rotation.add_timeseries_output('mlg_pos.x_mlg')
+    rotation.add_timeseries_output('mlg_pos.h_mlg', units='ft')
     # --------------------------------------------- Transition ---------------------------------------------------------
     transition = dm.Phase(ode_class=TransitionODE, transcription=dm.GaussLobatto(num_segments=10, compressed=False),
                           ode_init_kwargs={'airplane': airplane})
@@ -134,10 +142,15 @@ def run_takeoff(airplane, runway, flap_angle=0.0, wind_speed=0.0):
     # Boundary Constraint
     transition.add_boundary_constraint(name='mlg_pos.x_mlg', loc='final', units='m', upper=runway.toda, shape=(1,))
     transition.add_boundary_constraint(name='mlg_pos.h_mlg', loc='final', units='ft', equals=35.0, shape=(1,))
-    transition.add_boundary_constraint(name='v_vs_comp.V_Vstall', loc='final', units=None, lower=1.2,
-                                       shape=(1,))
+    transition.add_boundary_constraint(name='v_vs_comp.V_Vstall', loc='final', units=None, lower=1.2, shape=(1,))
     transition.add_boundary_constraint(name='transition_eom.gam_dot', loc='final', units='rad/s', equals=0.0,
                                        shape=(1,))
+
+    transition.add_timeseries_output('transition_eom.h_dot', units='ft/min')
+    transition.add_timeseries_output('alpha_comp.alpha')
+    transition.add_timeseries_output('prop.thrust')
+    transition.add_timeseries_output('mlg_pos.x_mlg')
+    transition.add_timeseries_output('mlg_pos.h_mlg', units='ft')
 
     # ---------------------------------------- Trajectory Parameters ---------------------------------------------------
     traj.add_parameter(name='dih', val=0.0, units='deg', lower=-5.0, upper=5.0,
