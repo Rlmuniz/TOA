@@ -5,8 +5,10 @@ from toa.data import Airplane
 from toa.models.aero.drag_coef_comp import DragCoeffComp
 from toa.models.aero.dynamic_pressure_comp import DynamicPressureComp
 from toa.models.aero.flap_slat_comp import FlapSlatComp
+from toa.models.aero.ground_effect_comp import GroundEffectComp
 from toa.models.aero.lift_coef_comp import LiftCoeffAllWheelsOnGroundComp
 from toa.models.aero.lift_coef_comp import LiftCoeffComp
+from toa.models.aero.lift_coef_ground_correction_comp import LiftCoeffGroundCorrectionComp
 from toa.models.aero.lift_drag_moment_comp import LiftDragMomentComp
 from toa.models.aero.moment_coef_comp import MomentCoeffAllWheelsOnGroundComp
 from toa.models.aero.moment_coef_comp import MomentCoeffComp
@@ -33,6 +35,8 @@ class AerodynamicsGroup(om.Group):
                            subsys=FlapSlatComp(airplane=airplane),
                            promotes_inputs=['flap_angle'], promotes_outputs=['CLmax'])
 
+        self.add_subsystem(name='ground_effect', subsys=GroundEffectComp(num_nodes=nn, airplane=airplane))
+
         if all_wheels_on_ground:
             self.add_subsystem(name='cl_comp',
                                subsys=LiftCoeffAllWheelsOnGroundComp(num_nodes=nn,
@@ -57,11 +61,21 @@ class AerodynamicsGroup(om.Group):
         self.connect('flap_slat.CL0', 'cl_comp.CL0')
         self.connect('flap_slat.CLa', 'cl_comp.CLa')
 
+        self.add_subsystem(name='cl_ground_corr', subsys=LiftCoeffGroundCorrectionComp(num_nodes=nn),
+                           promotes_inputs=['CL'])
+
+        self.connect('ground_effect.CLag', 'cl_ground_corr.CLag')
+        self.connect('ground_effect.dalpha_zero', 'cl_ground_corr.dalpha_zero')
+        self.connect('flap_slat.CLa', 'cl_ground_corr.CLa')
+
         self.add_subsystem(name='cd_comp',
                            subsys=DragCoeffComp(num_nodes=nn, airplane=airplane,
                                                 landing_gear=landing_gear, partial_coloring=True),
-                           promotes_inputs=['flap_angle', 'CL', 'grav', 'mass'],
+                           promotes_inputs=['flap_angle', 'grav', 'mass'],
                            promotes_outputs=['CD'])
+
+        self.connect('cl_ground_corr.CLg', 'cd_comp.CL')
+        self.connect('ground_effect.phi', 'cd_comp.phi')
 
         self.add_subsystem(name='dyn_press',
                            subsys=DynamicPressureComp(num_nodes=nn),
@@ -71,7 +85,8 @@ class AerodynamicsGroup(om.Group):
         self.add_subsystem(name='lift_drag_moment_comp',
                            subsys=LiftDragMomentComp(num_nodes=nn,
                                                      airplane=airplane),
-                           promotes_inputs=['CL', 'CD', 'Cm', 'qbar'],
+                           promotes_inputs=['CD', 'Cm', 'qbar'],
                            promotes_outputs=['L', 'D', 'M'])
 
+        self.connect('cl_ground_corr.CLg', 'lift_drag_moment_comp.CL')
         self.set_input_defaults('flap_angle', val=0.0, units='deg')

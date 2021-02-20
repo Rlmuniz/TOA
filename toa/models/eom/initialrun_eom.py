@@ -32,7 +32,7 @@ class InitialRunEOM(om.ExplicitComponent):
         self.add_input(name='rw_slope', val=0.0, desc='Runway slope', units='rad')
         self.add_input(name='grav', val=0.0, desc='Gravity acceleration',
                        units='m/s**2')
-        self.add_input(name='Vw', val=0.0,
+        self.add_input(name='Vw', val=zz,
                        desc='Wind speed along the runway, defined as positive for a headwind',
                        units='m/s')
         self.add_input(name='alpha', val=ones, desc='Angle of attack', units='rad')
@@ -54,18 +54,19 @@ class InitialRunEOM(om.ExplicitComponent):
         self.declare_partials(of='v_dot', wrt='mass', rows=ar, cols=ar)
         self.declare_partials(of='v_dot', wrt='grav', rows=ar, cols=zz)
         self.declare_partials(of='v_dot', wrt='lift', rows=ar, cols=ar)
-        self.declare_partials(of='v_dot', wrt='moment', rows=ar, cols=ar)
         self.declare_partials(of='v_dot', wrt='rw_slope', rows=ar, cols=zz)
 
         self.declare_partials(of='x_dot', wrt='V', rows=ar, cols=ar, val=1.0)
-        self.declare_partials(of='x_dot', wrt='Vw', rows=ar, cols=zz, val=-1.0)
+        self.declare_partials(of='x_dot', wrt='Vw', rows=ar, cols=ar, val=-1.0)
 
+        self.declare_partials(of='f_ng', wrt='thrust', rows=ar, cols=ar)
         self.declare_partials(of='f_ng', wrt='lift', rows=ar, cols=ar)
         self.declare_partials(of='f_ng', wrt='moment', rows=ar, cols=ar)
         self.declare_partials(of='f_ng', wrt='mass', rows=ar, cols=ar)
         self.declare_partials(of='f_ng', wrt='grav', rows=ar, cols=zz)
         self.declare_partials(of='f_ng', wrt='rw_slope', rows=ar, cols=zz)
 
+        self.declare_partials(of='f_mg', wrt='thrust', rows=ar, cols=ar)
         self.declare_partials(of='f_mg', wrt='lift', rows=ar, cols=ar)
         self.declare_partials(of='f_mg', wrt='moment', rows=ar, cols=ar)
         self.declare_partials(of='f_mg', wrt='mass', rows=ar, cols=ar)
@@ -85,20 +86,22 @@ class InitialRunEOM(om.ExplicitComponent):
         Vw = inputs['Vw']
         airplane = self.options['airplane']
 
-        mu_mg = 0.025
-        mu_ng = mu_mg
+        mu = 0.025
 
         xmg = airplane.landing_gear.main.x
         xng = airplane.landing_gear.nose.x
+        zm = airplane.landing_gear.main.z
+        zn = airplane.landing_gear.nose.z
+        zt = airplane.engine.zt
         weight = mass * grav
         cosslope = np.cos(rw_slope)
         sinslope = np.sin(rw_slope)
         cosalpha = np.cos(alpha)
 
-        f_ng = (-moment + xmg * (cosslope * weight - lift)) / (xmg + xng)
-        f_mg = (moment + xng * (cosslope * weight - lift)) / (xmg + xng)
+        f_ng = (- moment - thrust * zt + (xmg + mu * zm) * (weight * cosslope - lift)) / (mu * (zm - zn) + xmg + xng)
+        f_mg = (moment + thrust * zt + (xng - mu * zn) * (weight * cosslope - lift)) / (mu * (zm - zn) + xmg + xng)
 
-        f_rr = mu_mg * f_mg + mu_ng * f_ng
+        f_rr = mu * (f_mg + f_ng)
 
         outputs['v_dot'] = (thrust * cosalpha - drag - f_rr - weight * sinslope) / mass
         outputs['x_dot'] = V - Vw
@@ -111,15 +114,16 @@ class InitialRunEOM(om.ExplicitComponent):
         mass = inputs['mass']
         thrust = inputs['thrust']
         drag = inputs['drag']
-        moment = inputs['moment']
         lift = inputs['lift']
         rw_slope = inputs['rw_slope']
         grav = inputs['grav']
 
         xmg = airplane.landing_gear.main.x
         xng = airplane.landing_gear.nose.x
-        mu_mg = 0.025
-        mu_ng = mu_mg
+        zm = airplane.landing_gear.main.z
+        zn = airplane.landing_gear.nose.z
+        zt = airplane.engine.zt
+        mu = 0.025
 
         cosalpha = np.cos(alpha)
         sinalpha = np.sin(alpha)
@@ -129,29 +133,24 @@ class InitialRunEOM(om.ExplicitComponent):
         partials['v_dot', 'thrust'] = cosalpha / mass
         partials['v_dot', 'alpha'] = -thrust * sinalpha / mass
         partials['v_dot', 'drag'] = -1 / mass
-        partials['v_dot', 'mass'] = (drag * xmg + drag * xng - lift * mu_mg * xng - lift * mu_ng * xmg
-                                     + moment * mu_mg - moment * mu_ng - thrust * xmg * cosalpha
-                                     - thrust * xng * cosalpha) / (mass ** 2 * (xmg + xng))
-        partials['v_dot', 'grav'] = -(mu_mg * xng * cosslope
-                                      + mu_ng * xmg * cosslope
-                                      + (xmg + xng) * sinslope) / (xmg + xng)
-        partials['v_dot', 'lift'] = (mu_mg * xng + mu_ng * xmg) / (mass * (xmg + xng))
-        partials['v_dot', 'moment'] = (-mu_mg + mu_ng) / (mass * (xmg + xng))
-        partials['v_dot', 'rw_slope'] = grav * (mu_mg * xng * sinslope + mu_ng * xmg * sinslope
-                                                - (xmg + xng) * cosslope) / (xmg + xng)
+        partials['v_dot', 'mass'] = (drag - lift*mu - thrust*cosalpha)/mass**2
+        partials['v_dot', 'grav'] = -mu*cosslope - sinslope
+        partials['v_dot', 'lift'] = mu/mass
+        partials['v_dot', 'rw_slope'] = grav*(mu*sinslope - cosslope)
 
-        partials['f_ng', 'lift'] = -xmg / (xmg + xng)
-        partials['f_ng', 'moment'] = -1 / (xmg + xng)
-        partials['f_ng', 'mass'] = grav * xmg * cosslope / (xmg + xng)
-        partials['f_ng', 'grav'] = mass * xmg * cosslope / (xmg + xng)
-        partials['f_ng', 'rw_slope'] = -grav * mass * xmg * sinslope / (xmg + xng)
+        partials['f_ng', 'thrust'] = -zt/(mu*zm - mu*zn + xmg + xng)
+        partials['f_ng', 'lift'] = -(mu*zm + xmg)/(mu*zm - mu*zn + xmg + xng)
+        partials['f_ng', 'moment'] = -1/(mu*zm - mu*zn + xmg + xng)
+        partials['f_ng', 'mass'] = grav*(mu*zm + xmg)*cosslope/(mu*zm - mu*zn + xmg + xng)
+        partials['f_ng', 'grav'] = mass*(mu*zm + xmg)*cosslope/(mu*zm - mu*zn + xmg + xng)
+        partials['f_ng', 'rw_slope'] = -grav*mass*(mu*zm + xmg)*sinslope/(mu*zm - mu*zn + xmg + xng)
 
-        partials['f_mg', 'lift'] = -xng / (xmg + xng)
-        partials['f_mg', 'moment'] = 1 / (xmg + xng)
-        partials['f_mg', 'mass'] = grav * xng * cosslope / (xmg + xng)
-        partials['f_mg', 'grav'] = mass * xng * cosslope / (xmg + xng)
-        partials['f_mg', 'rw_slope'] = -grav * mass * xng * sinslope / (xmg + xng)
-
+        partials['f_mg', 'thrust'] = zt/(mu*zm - mu*zn + xmg + xng)
+        partials['f_mg', 'lift'] = (mu*zn - xng)/(mu*zm - mu*zn + xmg + xng)
+        partials['f_mg', 'moment'] = 1/(mu*zm - mu*zn + xmg + xng)
+        partials['f_mg', 'mass'] = grav*(-mu*zn + xng)*cosslope/(mu*zm - mu*zn + xmg + xng)
+        partials['f_mg', 'grav'] = mass*(-mu*zn + xng)*cosslope/(mu*zm - mu*zn + xmg + xng)
+        partials['f_mg', 'rw_slope'] = grav*mass*(mu*zn - xng)*sinslope/(mu*zm - mu*zn + xmg + xng)
 
 if __name__ == '__main__':
     prob = om.Problem()

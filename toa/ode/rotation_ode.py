@@ -56,13 +56,14 @@ class RotationODE(om.Group):
 
         self.add_subsystem(name='rotation_eom',
                            subsys=RotationEOM(num_nodes=nn, airplane=airplane),
-                           promotes_inputs=['mass', 'q', 'V', 'Vw'])
+                           promotes_inputs=['mass', 'q', 'Vw'])
 
         self.connect('prop.thrust', 'rotation_eom.thrust')
         self.connect('aero.L', 'rotation_eom.lift')
         self.connect('aero.D', 'rotation_eom.drag')
         self.connect('aero.M', 'rotation_eom.moment')
         self.connect('assumptions.grav', 'rotation_eom.grav')
+        self.connect('tas_comp.tas', 'rotation_eom.V')
 
         self.add_subsystem(name='mlg_pos',
                            subsys=MainLandingGearPosComp(num_nodes=nn, airplane=airplane))

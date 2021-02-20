@@ -35,7 +35,7 @@ class RotationEOM(om.ExplicitComponent):
         self.add_input(name='rw_slope', val=0.0, desc='Runway slope', units='rad')
         self.add_input(name='grav', val=0.0, desc='Gravity acceleration',
                        units='m/s**2')
-        self.add_input(name='Vw', val=0.0,
+        self.add_input(name='Vw', val=zz,
                        desc='Wind speed along the runway, defined as positive for a headwind',
                        units='m/s')
 
@@ -61,13 +61,14 @@ class RotationEOM(om.ExplicitComponent):
         self.declare_partials(of='v_dot', wrt='rw_slope', rows=ar, cols=zz)
 
         self.declare_partials(of='x_dot', wrt='V', rows=ar, cols=ar, val=1.0)
-        self.declare_partials(of='x_dot', wrt='Vw', rows=ar, cols=zz, val=-1.0)
+        self.declare_partials(of='x_dot', wrt='Vw', rows=ar, cols=ar, val=-1.0)
         self.declare_partials(of='x_dot', wrt='alpha', rows=ar, cols=ar)
         self.declare_partials(of='x_dot', wrt='q', rows=ar, cols=ar)
 
         self.declare_partials(of='h_dot', wrt='alpha', rows=ar, cols=ar)
         self.declare_partials(of='h_dot', wrt='q', rows=ar, cols=ar)
 
+        self.declare_partials(of='q_dot', wrt='thrust', rows=ar, cols=ar)
         self.declare_partials(of='q_dot', wrt='moment', rows=ar, cols=ar, val=1 / airplane.inertia.iy)
         self.declare_partials(of='q_dot', wrt='mass', rows=ar, cols=ar)
         self.declare_partials(of='q_dot', wrt='grav', rows=ar, cols=zz)
@@ -98,6 +99,8 @@ class RotationEOM(om.ExplicitComponent):
 
         mu = 0.025
         xmg = airplane.landing_gear.main.x
+        zm = airplane.landing_gear.main.z
+        zt = airplane.engine.zt
         weight = mass * grav
         cosslope = np.cos(rw_slope)
         sinslope = np.sin(rw_slope)
@@ -106,12 +109,12 @@ class RotationEOM(om.ExplicitComponent):
 
         f_mg = weight * cosslope - lift
         f_rr = mu * f_mg
-        m_mg = - xmg * f_mg
+        m_mg = - xmg * f_mg - f_rr * zm
 
         outputs['v_dot'] = (thrust * cosalpha - drag - f_rr - weight * sinslope) / mass
         outputs['x_dot'] = V - Vw - q * xmg * sinalpha
         outputs['h_dot'] = q * xmg * cosalpha
-        outputs['q_dot'] = (moment + m_mg) / airplane.inertia.iy
+        outputs['q_dot'] = (moment + m_mg + thrust * zt) / airplane.inertia.iy
         outputs['theta_dot'] = q
         outputs['f_mg'] = f_mg
 
@@ -128,6 +131,8 @@ class RotationEOM(om.ExplicitComponent):
 
         mu = 0.025
         xmg = airplane.landing_gear.main.x
+        zm = airplane.landing_gear.main.z
+        zt = airplane.engine.zt
 
         cosalpha = np.cos(alpha)
         sinalpha = np.sin(alpha)
@@ -138,9 +143,9 @@ class RotationEOM(om.ExplicitComponent):
         partials['v_dot', 'alpha'] = -thrust * sinalpha / mass
         partials['v_dot', 'drag'] = -1 / mass
         partials['v_dot', 'mass'] = (drag - lift * mu - thrust * cosalpha) / mass ** 2
-        partials['v_dot', 'grav'] = -mu * cosslope - sinslope
+        partials['v_dot', 'grav'] = -mu*cosslope - sinslope
         partials['v_dot', 'lift'] = mu / mass
-        partials['v_dot', 'rw_slope'] = grav * (mu * sinslope - cosslope)
+        partials['v_dot', 'rw_slope'] = grav*(mu*sinslope - cosslope)
 
         partials['x_dot', 'q'] = -xmg * sinalpha
         partials['x_dot', 'alpha'] = -q * xmg * cosalpha
@@ -148,10 +153,11 @@ class RotationEOM(om.ExplicitComponent):
         partials['h_dot', 'q'] = xmg * cosalpha
         partials['h_dot', 'alpha'] = -q * xmg * sinalpha
 
-        partials['q_dot', 'mass'] = -grav * xmg * cosslope / airplane.inertia.iy
-        partials['q_dot', 'grav'] = -mass * xmg * cosslope / airplane.inertia.iy
-        partials['q_dot', 'lift'] = xmg / airplane.inertia.iy
-        partials['q_dot', 'rw_slope'] = grav * mass * xmg * sinslope / airplane.inertia.iy
+        partials['q_dot', 'thrust'] = zt / airplane.inertia.iy
+        partials['q_dot', 'mass'] = -grav*(mu*zm + xmg)*cosslope / airplane.inertia.iy
+        partials['q_dot', 'grav'] = -mass*(mu*zm + xmg)*cosslope / airplane.inertia.iy
+        partials['q_dot', 'lift'] = (mu*zm + xmg) / airplane.inertia.iy
+        partials['q_dot', 'rw_slope'] = grav*mass*(mu*zm + xmg)*sinslope / airplane.inertia.iy
 
         partials['f_mg', 'mass'] = grav * cosslope
         partials['f_mg', 'grav'] = mass * cosslope

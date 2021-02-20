@@ -10,15 +10,15 @@ class TrueAirspeedCompGroundRoll(om.ExplicitComponent):
         nn = self.options['num_nodes']
         ar = np.arange(nn)
 
-        self.add_input(name='Vw', val=0.0,
+        self.add_input(name='Vw', val=np.zeros(nn),
                        desc='Wind speed along the runway, defined as positive for a headwind',
                        units='m/s')
-        self.add_input(name='V', shape=(nn,), desc='Body x axis velocity', units='m/s')
+        self.add_input(name='V', val=np.zeros(nn), desc='Body x axis velocity', units='m/s')
 
         self.add_output(name='tas', val=np.zeros(nn), desc="True airspeed", units='m/s')
 
         self.declare_partials(of='tas', wrt='V', rows=ar, cols=ar, val=1.0)
-        self.declare_partials(of='tas', wrt='Vw', rows=ar, cols=np.zeros(nn), val=1.0)
+        self.declare_partials(of='tas', wrt='Vw', rows=ar, cols=ar, val=1.0)
 
     def compute(self, inputs, outputs, **kwargs):
         outputs['tas'] = inputs['V'] + inputs['Vw']
@@ -35,7 +35,7 @@ class TrueAirspeedComp(om.ExplicitComponent):
         ones = np.ones(nn)
 
         self.add_input(name='V', val=ones, desc='Body x axis velocity', units='m/s')
-        self.add_input(name='Vw', val=0.0,
+        self.add_input(name='Vw', val=zz,
                        desc='Wind speed along the runway, defined as positive for a headwind',
                        units='m/s')
         self.add_input(name='gam', val=ones, desc='Flight path angle', units='rad')
@@ -43,7 +43,7 @@ class TrueAirspeedComp(om.ExplicitComponent):
         self.add_output(name='tas', val=ones, desc="True airspeed", units='m/s')
 
         self.declare_partials(of='tas', wrt='V', rows=ar, cols=ar)
-        self.declare_partials(of='tas', wrt='Vw', rows=ar, cols=zz)
+        self.declare_partials(of='tas', wrt='Vw', rows=ar, cols=ar)
         self.declare_partials(of='tas', wrt='gam', rows=ar, cols=ar)
 
     def compute(self, inputs, outputs, **kwargs):
@@ -74,8 +74,8 @@ class TrueAirspeedComp(om.ExplicitComponent):
 
 if __name__ == '__main__':
     prob = om.Problem()
-    num_nodes = 1
-    prob.model.add_subsystem('comp', TrueAirspeedComp(num_nodes=1))
+    num_nodes = 20
+    prob.model.add_subsystem('comp', TrueAirspeedComp(num_nodes=num_nodes))
 
     prob.set_solver_print(level=0)
 

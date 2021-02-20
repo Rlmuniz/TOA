@@ -18,7 +18,7 @@ flap:
   type: triple-slotted
   area: 18.208
   bf_b: 0.72
-  sf_s: 0.20
+  sf_s: 0.29
   cf_c: 0.20
   lambda_f: 0.90
 
@@ -27,7 +27,7 @@ slat:
   bs_b: 0.72
 
 limits:
-  MTOW: 68000
+  MTOW: 68039
 
 engine:
   type: turbofan
@@ -40,6 +40,7 @@ engine:
   cff1: 1.26847
   cff2: -0.732308
   cff3: 0.523854
+  zt: 1.30
 
 polar:
   CD0: 0.020
@@ -48,12 +49,12 @@ polar:
 
 landing_gear:
   main:
-    x: 1
-    z: 3
+    x: 1.5
+    z: 2.3
     number: 1
   nose:
-    x: 13.00
-    z: 3
+    x: 12.77
+    z: 2.3
     number: 1
 
 inertia:

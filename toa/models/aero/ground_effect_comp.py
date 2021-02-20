@@ -36,10 +36,8 @@ class GroundEffectComp(om.ExplicitComponent):
         h_b = h/airplane.wing.span
         h_c = h/airplane.wing.mac
         # CLalpha
-        if 2*h_b <= 2:
-            ar_areff = interp1d(ar_areff_x, ar_areff_y, kind='cubic')(2 * h_b)
-        else:
-            ar_areff = 1
+        ar_areff_initial = interp1d(ar_areff_x, ar_areff_y, kind='cubic', fill_value='extrapolate')(2 * h_b)
+        ar_areff = np.where(ar_areff_initial > 2, 1, ar_areff_initial)
         ar = airplane.wing.span ** 2 / airplane.wing.area
         areff = ar / ar_areff
         beta = 1

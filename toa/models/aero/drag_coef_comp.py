@@ -17,12 +17,12 @@ class DragCoeffComp(om.ExplicitComponent):
     def setup(self):
         nn = self.options['num_nodes']
 
-        self.add_input(name='flap_angle', shape=(1,), desc='Flap deflection',
+        self.add_input(name='flap_angle', val=0.0, desc='Flap deflection',
                        units='rad')
-        self.add_input(name='CL', shape=(nn,), desc='Lift coefficient', units=None)
-        self.add_input(name='mass', shape=(nn,), desc=' mass', units='kg')
-        self.add_input(name='grav', shape=(1,), desc='Gravity acceleration',
-                       units='m/s**2')
+        self.add_input(name='CL', val=np.zeros(nn), desc='Lift coefficient', units=None)
+        self.add_input(name='mass', val=np.zeros(nn), desc=' mass', units='kg')
+        self.add_input(name='grav', val=0.0, desc='Gravity acceleration', units='m/s**2')
+        self.add_input(name='phi', val=np.zeros(nn), desc='Induced drag variation due to ground effect', units=None)
 
         self.add_output(name='CD', shape=(nn,), desc='Drag coefficient', units=None)
 
@@ -37,6 +37,7 @@ class DragCoeffComp(om.ExplicitComponent):
         CL = inputs['CL']
         mass = inputs['mass']
         grav = inputs['grav']
+        phi = inputs['phi']
 
         ap = self.options['airplane']
 
@@ -59,4 +60,4 @@ class DragCoeffComp(om.ExplicitComponent):
 
         k_total = 1 / (1 / ap.polar.k + np.pi * ar * delta_e_flap)
 
-        outputs['CD'] = CD0_total + k_total * CL ** 2
+        outputs['CD'] = CD0_total + phi * k_total * CL ** 2

@@ -36,7 +36,7 @@ class TransitionOEM(om.ExplicitComponent):
                        units='rad')
         self.add_input(name='grav', val=0.0, desc='Gravity acceleration',
                        units='m/s**2')
-        self.add_input(name='Vw', val=0.0,
+        self.add_input(name='Vw', val=zz,
                        desc='Wind speed along the runway, defined as positive for a headwind',
                        units='m/s')
 
@@ -69,7 +69,7 @@ class TransitionOEM(om.ExplicitComponent):
 
         self.declare_partials(of='x_dot', wrt='V', rows=ar, cols=ar)
         self.declare_partials(of='x_dot', wrt='gam', rows=ar, cols=ar)
-        self.declare_partials(of='x_dot', wrt='Vw', rows=ar, cols=zz, val=-1.0)
+        self.declare_partials(of='x_dot', wrt='Vw', rows=ar, cols=ar, val=-1.0)
 
         self.declare_partials(of='h_dot', wrt='V', rows=ar, cols=ar)
         self.declare_partials(of='h_dot', wrt='gam', rows=ar, cols=ar)
