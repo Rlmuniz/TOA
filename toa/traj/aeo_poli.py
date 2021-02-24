@@ -8,7 +8,7 @@ from toa.ode.transition_ode import TransitionODE
 from toa.runway import Runway
 
 
-def run_takeoff(airplane, runway, flap_angle=0.0, wind_speed=0.0):
+def run_takeoff(airplane, runway, flap_angle=0.0, wind_speed=0.0, order=2):
     p = om.Problem(model=om.Group())
 
     p.driver = om.pyOptSparseDriver()
@@ -55,8 +55,7 @@ def run_takeoff(airplane, runway, flap_angle=0.0, wind_speed=0.0):
     initial_run.add_boundary_constraint(name='initial_run_eom.f_ng', loc='final', units='N', lower=0.0, upper=0.2,
                                         shape=(1,))
 
-    initial_run.add_control(name='de', units='deg', lower=-20.0, upper=20.0, targets=['aero.de'], rate_continuity=True,
-                            ref=10)
+    initial_run.add_polynomial_control(name='de', val=0.0, units='deg', lower=-20.0, upper=20.0, targets=['aero.de'], order=order)
 
     # initial_run.add_objective('mass', loc='initial', scaler=-1)
 
@@ -99,8 +98,7 @@ def run_takeoff(airplane, runway, flap_angle=0.0, wind_speed=0.0):
                        targets=['q'], fix_initial=True, fix_final=False, lower=0.0, ref=10, defect_ref=10)
 
     # Rotation controls
-    rotation.add_control(name='de', units='deg', lower=-20.0, upper=20.0, targets=['aero.de'], fix_initial=True,
-                         rate_continuity=True)
+    rotation.add_polynomial_control(name='de', val=0.0, units='deg', lower=-20.0, upper=20.0, targets=['aero.de'], order=order)
 
     # Rotation path constraints
     rotation.add_path_constraint(name='rotation_eom.f_mg', lower=0, units='N')
@@ -150,8 +148,7 @@ def run_takeoff(airplane, runway, flap_angle=0.0, wind_speed=0.0):
                          targets=['q'], fix_initial=False, fix_final=False, lower=0.0, ref=10, defect_ref=10)
 
     # controls
-    transition.add_control(name='de', units='deg', lower=-20.0, upper=20.0, targets=['aero.de'], rate_continuity=True,
-                           ref=10)
+    transition.add_polynomial_control(name='de', val=0.0, units='deg', lower=-20.0, upper=20.0, targets=['aero.de'], order=order)
 
     # path constraints
     transition.add_path_constraint(name='aero.alpha_lim.alphadiff', lower=0.0, units='rad')
@@ -249,7 +246,6 @@ def run_takeoff(airplane, runway, flap_angle=0.0, wind_speed=0.0):
     p['traj.rotation.states:h'] = airplane.landing_gear.main.z
     p['traj.rotation.states:q'] = rotation.interpolate(ys=[0.0, 10.0], nodes='state_input')
     p['traj.rotation.states:theta'] = rotation.interpolate(ys=[0.0, 10.0], nodes='state_input')
-    p['traj.rotation.controls:de'] = rotation.interpolate(ys=[0.0, -20.0], nodes='control_input')
 
     p['traj.transition.states:x'] = transition.interpolate(
             ys=[0.8 * runway.tora, runway.toda],

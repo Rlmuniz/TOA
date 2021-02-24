@@ -61,7 +61,7 @@ class TransitionODE(om.Group):
 
         self.add_subsystem(name='transition_eom',
                            subsys=TransitionOEM(num_nodes=nn, airplane=airplane),
-                           promotes_inputs=['q', 'mass', 'Vw', 'gam'])
+                           promotes_inputs=['q', 'V', 'mass', 'gam'])
 
         self.connect('prop.thrust', 'transition_eom.thrust')
         self.connect('aero.L', 'transition_eom.lift')
@@ -69,7 +69,6 @@ class TransitionODE(om.Group):
         self.connect('aero.M', 'transition_eom.moment')
         self.connect('assumptions.grav', 'transition_eom.grav')
         self.connect('alpha_comp.alpha', 'transition_eom.alpha')
-        self.connect('tas_comp.tas', 'transition_eom.V')
 
         self.add_subsystem(name='mlg_pos',
                            subsys=MainLandingGearPosComp(num_nodes=nn,
@@ -77,11 +76,12 @@ class TransitionODE(om.Group):
                            promotes_inputs=['theta'])
 
         self.add_subsystem(name='v_vs_comp', subsys=VVstallRatioComp(num_nodes=nn, airplane=airplane),
-                           promotes_inputs=['mass', 'V'])
+                           promotes_inputs=['mass'])
 
         self.connect('aero.CLmax', 'v_vs_comp.CLmax')
         self.connect('assumptions.grav', 'v_vs_comp.grav')
         self.connect('atmos.rho', 'v_vs_comp.rho')
+        self.connect('tas_comp.tas', 'v_vs_comp.V')
 
         self.add_subsystem(name='obj_cmp', subsys=ObjectiveComp(num_nodes=nn), promotes_inputs=['mass'])
 

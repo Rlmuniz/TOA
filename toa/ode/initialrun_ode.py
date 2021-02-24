@@ -54,14 +54,13 @@ class InitialRunODE(om.Group):
 
         self.add_subsystem(name='initial_run_eom',
                            subsys=InitialRunEOM(num_nodes=nn, airplane=airplane),
-                           promotes_inputs=['mass', 'Vw'])
+                           promotes_inputs=['mass', 'V'])
 
         self.connect('prop.thrust', 'initial_run_eom.thrust')
         self.connect('aero.L', 'initial_run_eom.lift')
         self.connect('aero.D', 'initial_run_eom.drag')
         self.connect('aero.M', 'initial_run_eom.moment')
         self.connect('assumptions.grav', 'initial_run_eom.grav')
-        self.connect('tas_comp.tas', 'initial_run_eom.V')
 
         self.add_subsystem(name='mlg_pos',
                            subsys=MainLandingGearPosComp(num_nodes=nn, airplane=airplane))

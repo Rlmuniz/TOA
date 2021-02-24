@@ -61,10 +61,9 @@ def calc_slat_3D(dslat: float, airplane: Airplane):
 
 def get_CLdata(dflap: float, airplane: Airplane):
     if dflap > 0:
-        dslat = 25
+        dslat = 15
         dCL_flap, CLalpha_flap, dCLmax_flap = calc_flap_3D(dflap, airplane)
         dCL_slat, dCLmax_slat = calc_slat_3D(dslat, airplane)
-
         CL0 = airplane.coeffs.CL0 + dCL_flap + dCL_slat
         CLmax = airplane.coeffs.CLmax + dCLmax_flap + dCLmax_slat
         CLa = CLalpha_flap
@@ -79,7 +78,9 @@ def get_CLdata(dflap: float, airplane: Airplane):
 
 if __name__ == '__main__':
     airplane = get_airplane_data('b734')
+    CL0, CLmax, CLa, alpha_max = get_CLdata(5, airplane)
+    print(CL0, CLmax, CLa, alpha_max)
     CL0, CLmax, CLa, alpha_max = get_CLdata(10, airplane)
     print(CL0, CLmax, CLa, alpha_max)
-    CL0, CLmax, CLa, alpha_max = get_CLdata(25, airplane)
+    CL0, CLmax, CLa, alpha_max = get_CLdata(15, airplane)
     print(CL0, CLmax, CLa, alpha_max)

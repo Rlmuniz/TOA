@@ -15,18 +15,11 @@ class ObjectiveComp(om.ExplicitComponent):
 
         self.add_output(name='obj', val=ones, desc='Objective function', units=None)
 
-        self.declare_partials(of='obj', wrt='mass', rows=ar, cols=ar)
-        self.declare_partials(of='obj', wrt='x', rows=ar, cols=ar)
+        self.declare_partials(of='obj', wrt='mass', rows=ar, cols=ar, val=-1.0)
+        self.declare_partials(of='obj', wrt='x', rows=ar, cols=ar, val=1.0)
 
     def compute(self, inputs, outputs, **kwargs):
         mass = inputs['mass']
         x = inputs['x']
 
-        outputs['obj'] = mass / x
-
-    def compute_partials(self, inputs, partials, **kwargs):
-        mass = inputs['mass']
-        x = inputs['x']
-
-        partials['obj', 'mass'] = 1 / x
-        partials['obj', 'x'] = -mass / x ** 2
+        outputs['obj'] = x - mass

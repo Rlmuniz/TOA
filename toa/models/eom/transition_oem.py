@@ -36,9 +36,6 @@ class TransitionOEM(om.ExplicitComponent):
                        units='rad')
         self.add_input(name='grav', val=0.0, desc='Gravity acceleration',
                        units='m/s**2')
-        self.add_input(name='Vw', val=zz,
-                       desc='Wind speed along the runway, defined as positive for a headwind',
-                       units='m/s')
 
         self.add_output(name='v_dot', val=ones, desc='Body x axis acceleration',
                         units='m/s**2')
@@ -69,7 +66,6 @@ class TransitionOEM(om.ExplicitComponent):
 
         self.declare_partials(of='x_dot', wrt='V', rows=ar, cols=ar)
         self.declare_partials(of='x_dot', wrt='gam', rows=ar, cols=ar)
-        self.declare_partials(of='x_dot', wrt='Vw', rows=ar, cols=ar, val=-1.0)
 
         self.declare_partials(of='h_dot', wrt='V', rows=ar, cols=ar)
         self.declare_partials(of='h_dot', wrt='gam', rows=ar, cols=ar)
@@ -87,7 +83,6 @@ class TransitionOEM(om.ExplicitComponent):
         alpha = inputs['alpha']
         q = inputs['q']
         gam = inputs['gam']
-        Vw = inputs['Vw']
         grav = inputs['grav']
         airplane = self.options['airplane']
 
@@ -100,7 +95,7 @@ class TransitionOEM(om.ExplicitComponent):
 
         outputs['v_dot'] = (thrust * cosalpha - drag - weight * singam) / mass
         outputs['gam_dot'] = (thrust * sinalpha + lift - weight * cosgam) / (mass * V)
-        outputs['x_dot'] = V * cosgam - Vw
+        outputs['x_dot'] = V * cosgam
         outputs['h_dot'] = V * singam
         outputs['q_dot'] = moment / airplane.inertia.iy
         outputs['theta_dot'] = q

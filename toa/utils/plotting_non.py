@@ -160,14 +160,14 @@ def plot_results(p_sol, p_sim, plots_dir='plots'):
         }
 
     de_sol = {
-        'initial_run': p_sol.get_val('traj.initial_run.timeseries.controls:de'),
-        'rotation': p_sol.get_val('traj.rotation.timeseries.controls:de'),
-        'transition': p_sol.get_val('traj.transition.timeseries.controls:de'),
+        'initial_run': p_sol.get_val('traj.initial_run.timeseries.parameters:de'),
+        'rotation': p_sol.get_val('traj.rotation.timeseries.parameters:de'),
+        'transition': p_sol.get_val('traj.transition.timeseries.parameters:de'),
         }
     de_sim = {
-        'initial_run': p_sim.get_val('traj.initial_run.timeseries.controls:de'),
-        'rotation': p_sim.get_val('traj.rotation.timeseries.controls:de'),
-        'transition': p_sim.get_val('traj.transition.timeseries.controls:de'),
+        'initial_run': p_sim.get_val('traj.initial_run.timeseries.parameters:de'),
+        'rotation': p_sim.get_val('traj.rotation.timeseries.parameters:de'),
+        'transition': p_sim.get_val('traj.transition.timeseries.parameters:de'),
         }
 
     # Plots

@@ -160,14 +160,14 @@ def plot_results(p_sol, p_sim, plots_dir='plots'):
         }
 
     de_sol = {
-        'initial_run': p_sol.get_val('traj.initial_run.timeseries.controls:de'),
-        'rotation': p_sol.get_val('traj.rotation.timeseries.controls:de'),
-        'transition': p_sol.get_val('traj.transition.timeseries.controls:de'),
+        'initial_run': p_sol.get_val('traj.initial_run.timeseries.polynomial_controls:de'),
+        'rotation': p_sol.get_val('traj.rotation.timeseries.polynomial_controls:de'),
+        'transition': p_sol.get_val('traj.transition.timeseries.polynomial_controls:de'),
         }
     de_sim = {
-        'initial_run': p_sim.get_val('traj.initial_run.timeseries.controls:de'),
-        'rotation': p_sim.get_val('traj.rotation.timeseries.controls:de'),
-        'transition': p_sim.get_val('traj.transition.timeseries.controls:de'),
+        'initial_run': p_sim.get_val('traj.initial_run.timeseries.polynomial_controls:de'),
+        'rotation': p_sim.get_val('traj.rotation.timeseries.polynomial_controls:de'),
+        'transition': p_sim.get_val('traj.transition.timeseries.polynomial_controls:de'),
         }
 
     # Plots
@@ -182,7 +182,7 @@ def plot_results(p_sol, p_sim, plots_dir='plots'):
     axs[0].plot(xmlg_sol['transition'], hmlg_sol['transition'], marker='o', color='tab:blue', linestyle='None')
     axs[0].set_xlabel('Distância (m)')
     axs[0].set_ylabel('Altura (ft)')
-    axs[0].set_xlim(0, 2000)
+    axs[0].set_xlim(left=0)
     axs[0].set_ylim(top=40)
     axs[0].grid(True)
     axs[0].legend()

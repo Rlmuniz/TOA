@@ -50,7 +50,10 @@ class GroundEffectComp(om.ExplicitComponent):
         dalpha_zero = airplane.wing.t_c * (-0.1177 * (1 / h_c ** 2) + 3.5655 * (1 / h_c))
 
         # deltaK
-        phi = (33 * h_b ** (3/2)) / (1 + 33 * h_b ** (3/2))
+        if np.all(h_b >= 0):
+            phi = (33 * h_b ** (3/2)) / (1 + 33 * h_b ** (3/2))
+        else:
+            phi = 0
 
         outputs['CLag'] = CLag
         outputs['dalpha_zero'] = dalpha_zero

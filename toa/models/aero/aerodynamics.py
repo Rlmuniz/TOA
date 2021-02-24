@@ -61,6 +61,13 @@ class AerodynamicsGroup(om.Group):
         self.connect('flap_slat.CL0', 'cl_comp.CL0')
         self.connect('flap_slat.CLa', 'cl_comp.CLa')
 
+        self.add_subsystem(name="alpha_lim",
+                           subsys=om.ExecComp('alphadiff=amax-alpha', alphadiff={'value': np.ones(nn), 'units': 'rad'},
+                                              amax={'value': 0.0, 'units': 'rad'},
+                                              alpha={'value': np.zeros(nn), 'units': 'rad'}),
+                           promotes_inputs=['alpha'])
+        self.connect('flap_slat.alpha_max', 'alpha_lim.amax')
+
         self.add_subsystem(name='cl_ground_corr', subsys=LiftCoeffGroundCorrectionComp(num_nodes=nn),
                            promotes_inputs=['CL'])
 

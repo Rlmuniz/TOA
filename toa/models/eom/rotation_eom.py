@@ -35,9 +35,6 @@ class RotationEOM(om.ExplicitComponent):
         self.add_input(name='rw_slope', val=0.0, desc='Runway slope', units='rad')
         self.add_input(name='grav', val=0.0, desc='Gravity acceleration',
                        units='m/s**2')
-        self.add_input(name='Vw', val=zz,
-                       desc='Wind speed along the runway, defined as positive for a headwind',
-                       units='m/s')
 
         self.add_output(name='x_dot', val=ones, desc='Derivative of horizontal position',
                         units='m/s')
@@ -61,7 +58,6 @@ class RotationEOM(om.ExplicitComponent):
         self.declare_partials(of='v_dot', wrt='rw_slope', rows=ar, cols=zz)
 
         self.declare_partials(of='x_dot', wrt='V', rows=ar, cols=ar, val=1.0)
-        self.declare_partials(of='x_dot', wrt='Vw', rows=ar, cols=ar, val=-1.0)
         self.declare_partials(of='x_dot', wrt='alpha', rows=ar, cols=ar)
         self.declare_partials(of='x_dot', wrt='q', rows=ar, cols=ar)
 
@@ -94,7 +90,6 @@ class RotationEOM(om.ExplicitComponent):
         q = inputs['q']
         grav = inputs['grav']
         rw_slope = inputs['rw_slope']
-        Vw = inputs['Vw']
         airplane = self.options['airplane']
 
         mu = 0.025
@@ -112,7 +107,7 @@ class RotationEOM(om.ExplicitComponent):
         m_mg = - xmg * f_mg - f_rr * zm
 
         outputs['v_dot'] = (thrust * cosalpha - drag - f_rr - weight * sinslope) / mass
-        outputs['x_dot'] = V - Vw - q * xmg * sinalpha
+        outputs['x_dot'] = V - q * xmg * sinalpha
         outputs['h_dot'] = q * xmg * cosalpha
         outputs['q_dot'] = (moment + m_mg + thrust * zt) / airplane.inertia.iy
         outputs['theta_dot'] = q

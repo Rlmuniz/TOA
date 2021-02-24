@@ -6,7 +6,7 @@ fuselage:
   width: 3.73
 
 wing:
-  area: 91.04
+  area: 105.4
   span: 28.88
   mac: 3.73
   sweep_14: 25
@@ -66,11 +66,11 @@ coeffs:
   CLa: 5.4681
   alpha_max: 13.5
   CLmax: 1.4156
-  CLde: 0.36
+  CLde: 0.213
   CLih: 0.75
-  CLq: 5.65
+  CLq: 7.72
   Cm0: 0.0
   Cma: -1.45
-  Cmde: -1.40
+  Cmde: -0.637
   Cmih: -3.0
-  Cmq: -21.4
+  Cmq: -12.1

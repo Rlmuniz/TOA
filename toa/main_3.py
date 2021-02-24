@@ -2,8 +2,8 @@
 import matplotlib.pyplot as plt
 from toa.data import get_airplane_data
 from toa.runway import Runway
-from toa.traj.aeo import run_takeoff
-from toa.utils.plotting import plot_results
+from toa.traj.aeo_non_optimized import run_takeoff
+from toa.utils.plotting_non import plot_results
 from toa.utils.validation import validate_result
 
 runway = Runway(2500, 0.0, 0.0, 0.0, 0.00)

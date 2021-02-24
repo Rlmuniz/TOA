@@ -39,8 +39,8 @@ def run_takeoff(airplane, runway, flap_angle=0.0, wind_speed=0.0):
                           upper=airplane.limits.MTOW, ref=10000, defect_ref=10000)
 
     # Initial run parameters
-    # initial_run.add_parameter(name='de', val=0.0, units='deg', desc='Elevator deflection',
-    #                          targets=['aero.de'], opt=False, include_timeseries=True)
+    initial_run.add_parameter(name='de', val=-5.0, units='deg', desc='Elevator deflection',
+                              targets=['aero.de'], opt=False, include_timeseries=True)
     initial_run.add_parameter(name='theta', val=0.0, units='deg', desc='Pitch Angle',
                               targets=['aero.alpha', 'initial_run_eom.alpha',
                                        'mlg_pos.theta'], opt=False, include_timeseries=True)
@@ -54,9 +54,6 @@ def run_takeoff(airplane, runway, flap_angle=0.0, wind_speed=0.0):
 
     initial_run.add_boundary_constraint(name='initial_run_eom.f_ng', loc='final', units='N', lower=0.0, upper=0.2,
                                         shape=(1,))
-
-    initial_run.add_control(name='de', units='deg', lower=-20.0, upper=20.0, targets=['aero.de'], rate_continuity=True,
-                            ref=10)
 
     # initial_run.add_objective('mass', loc='initial', scaler=-1)
 
@@ -98,9 +95,8 @@ def run_takeoff(airplane, runway, flap_angle=0.0, wind_speed=0.0):
     rotation.add_state(name='q', units='deg/s', rate_source='rotation_eom.q_dot',
                        targets=['q'], fix_initial=True, fix_final=False, lower=0.0, ref=10, defect_ref=10)
 
-    # Rotation controls
-    rotation.add_control(name='de', units='deg', lower=-20.0, upper=20.0, targets=['aero.de'], fix_initial=True,
-                         rate_continuity=True)
+    rotation.add_parameter(name='de', val=-5.0, units='deg', desc='Elevator deflection',
+                           targets=['aero.de'], opt=False, include_timeseries=True)
 
     # Rotation path constraints
     rotation.add_path_constraint(name='rotation_eom.f_mg', lower=0, units='N')
@@ -149,10 +145,8 @@ def run_takeoff(airplane, runway, flap_angle=0.0, wind_speed=0.0):
     transition.add_state(name='q', units='deg/s', rate_source='transition_eom.q_dot',
                          targets=['q'], fix_initial=False, fix_final=False, lower=0.0, ref=10, defect_ref=10)
 
-    # controls
-    transition.add_control(name='de', units='deg', lower=-20.0, upper=20.0, targets=['aero.de'], rate_continuity=True,
-                           ref=10)
-
+    transition.add_parameter(name='de', val=-5.0, units='deg', desc='Elevator deflection',
+                             targets=['aero.de'], opt=False, include_timeseries=True)
     # path constraints
     transition.add_path_constraint(name='aero.alpha_lim.alphadiff', lower=0.0, units='rad')
 
@@ -249,7 +243,6 @@ def run_takeoff(airplane, runway, flap_angle=0.0, wind_speed=0.0):
     p['traj.rotation.states:h'] = airplane.landing_gear.main.z
     p['traj.rotation.states:q'] = rotation.interpolate(ys=[0.0, 10.0], nodes='state_input')
     p['traj.rotation.states:theta'] = rotation.interpolate(ys=[0.0, 10.0], nodes='state_input')
-    p['traj.rotation.controls:de'] = rotation.interpolate(ys=[0.0, -20.0], nodes='control_input')
 
     p['traj.transition.states:x'] = transition.interpolate(
             ys=[0.8 * runway.tora, runway.toda],
