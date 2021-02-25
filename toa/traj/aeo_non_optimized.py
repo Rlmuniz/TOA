@@ -39,8 +39,8 @@ def run_takeoff(airplane, runway, flap_angle=0.0, wind_speed=0.0):
                           upper=airplane.limits.MTOW, ref=10000, defect_ref=10000)
 
     # Initial run parameters
-    initial_run.add_parameter(name='de', val=-5.0, units='deg', desc='Elevator deflection',
-                              targets=['aero.de'], opt=False, include_timeseries=True)
+    # initial_run.add_parameter(name='de', val=0.0, units='deg', desc='Elevator deflection',
+    #                          targets=['aero.de'], opt=False, include_timeseries=True)
     initial_run.add_parameter(name='theta', val=0.0, units='deg', desc='Pitch Angle',
                               targets=['aero.alpha', 'initial_run_eom.alpha',
                                        'mlg_pos.theta'], opt=False, include_timeseries=True)
@@ -54,6 +54,8 @@ def run_takeoff(airplane, runway, flap_angle=0.0, wind_speed=0.0):
 
     initial_run.add_boundary_constraint(name='initial_run_eom.f_ng', loc='final', units='N', lower=0.0, upper=0.2,
                                         shape=(1,))
+
+    initial_run.add_control(name='de', units='deg', val=0.0, targets=['aero.de'], ref=10, opt=0.0)
 
     # initial_run.add_objective('mass', loc='initial', scaler=-1)
 
@@ -95,8 +97,8 @@ def run_takeoff(airplane, runway, flap_angle=0.0, wind_speed=0.0):
     rotation.add_state(name='q', units='deg/s', rate_source='rotation_eom.q_dot',
                        targets=['q'], fix_initial=True, fix_final=False, lower=0.0, ref=10, defect_ref=10)
 
-    rotation.add_parameter(name='de', val=-5.0, units='deg', desc='Elevator deflection',
-                           targets=['aero.de'], opt=False, include_timeseries=True)
+    # Rotation controls
+    rotation.add_control(name='de', units='deg', val=-10.0, targets=['aero.de'], opt=False)
 
     # Rotation path constraints
     rotation.add_path_constraint(name='rotation_eom.f_mg', lower=0, units='N')
@@ -145,8 +147,9 @@ def run_takeoff(airplane, runway, flap_angle=0.0, wind_speed=0.0):
     transition.add_state(name='q', units='deg/s', rate_source='transition_eom.q_dot',
                          targets=['q'], fix_initial=False, fix_final=False, lower=0.0, ref=10, defect_ref=10)
 
-    transition.add_parameter(name='de', val=-5.0, units='deg', desc='Elevator deflection',
-                             targets=['aero.de'], opt=False, include_timeseries=True)
+    # controls
+    transition.add_control(name='de', units='deg', val=-10.0, targets=['aero.de'], ref=10, opt=False)
+
     # path constraints
     transition.add_path_constraint(name='aero.alpha_lim.alphadiff', lower=0.0, units='rad')
 
@@ -232,6 +235,7 @@ def run_takeoff(airplane, runway, flap_angle=0.0, wind_speed=0.0):
     p['traj.initial_run.states:mass'] = initial_run.interpolate(
             ys=[airplane.limits.MTOW, airplane.limits.MTOW - 100], nodes='state_input')
     p['traj.initial_run.parameters:h'] = airplane.landing_gear.main.z
+    p['traj.initial_run.controls:de'] = initial_run.interpolate(ys=[0.0, 0.0], nodes='control_input')
 
     p['traj.rotation.states:x'] = rotation.interpolate(
             ys=[0.7 * runway.tora, 0.8 * runway.tora],
@@ -243,6 +247,7 @@ def run_takeoff(airplane, runway, flap_angle=0.0, wind_speed=0.0):
     p['traj.rotation.states:h'] = airplane.landing_gear.main.z
     p['traj.rotation.states:q'] = rotation.interpolate(ys=[0.0, 10.0], nodes='state_input')
     p['traj.rotation.states:theta'] = rotation.interpolate(ys=[0.0, 10.0], nodes='state_input')
+    p['traj.rotation.controls:de'] = rotation.interpolate(ys=[0.0, -20.0], nodes='control_input')
 
     p['traj.transition.states:x'] = transition.interpolate(
             ys=[0.8 * runway.tora, runway.toda],
@@ -256,6 +261,7 @@ def run_takeoff(airplane, runway, flap_angle=0.0, wind_speed=0.0):
     p['traj.transition.states:q'] = transition.interpolate(ys=[10.0, 5.0], nodes='state_input')
     p['traj.transition.states:theta'] = transition.interpolate(ys=[10.0, 12.0], nodes='state_input')
     p['traj.transition.states:gam'] = transition.interpolate(ys=[0.0, 5.0], nodes='state_input')
+    p['traj.transition.controls:de'] = transition.interpolate(ys=[-20.0, -20.0], nodes='control_input')
 
     dm.run_problem(p)
     sim_out = traj.simulate()

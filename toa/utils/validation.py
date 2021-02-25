@@ -72,6 +72,10 @@ def validate_result(p, airplane, runway, flap_angle):
 
     Sa = Str + Scl
 
+    Sa_opt = p.get_val('traj.transition.timeseries.states:x')[-1] - p.get_val('traj.transition.timeseries.states:x')[0]
+
+    print(f"Sa: {Sa}, Sa_opt: {Sa_opt}, diff: {(Sa_opt - Sa) / Sa_opt * 100}")
+
     Sroskam = Sngr + Sr + Sa
     Sopt = p.get_val('traj.transition.timeseries.x_mlg')[-1]
     print(f"Sroskam: {Sroskam}, Programa: {Sopt}, diff: {(Sopt - Sroskam)/Sopt * 100}")

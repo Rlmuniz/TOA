@@ -6,7 +6,7 @@ from toa.traj.aeo import run_takeoff
 from toa.utils.plotting import plot_results
 from toa.utils.validation import validate_result
 
-runway = Runway(2500, 0.0, 0.0, 0.0, 0.00)
+runway = Runway(1800, 0.0, 0.0, 0.0, 0.00)
 airplane = get_airplane_data('b734')
 
 flap_angle = 5

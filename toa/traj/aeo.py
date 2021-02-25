@@ -99,8 +99,7 @@ def run_takeoff(airplane, runway, flap_angle=0.0, wind_speed=0.0):
                        targets=['q'], fix_initial=True, fix_final=False, lower=0.0, ref=10, defect_ref=10)
 
     # Rotation controls
-    rotation.add_control(name='de', units='deg', lower=-20.0, upper=20.0, targets=['aero.de'], fix_initial=True,
-                         rate_continuity=True)
+    rotation.add_control(name='de', units='deg', lower=-20.0, upper=20.0, targets=['aero.de'], rate_continuity=True)
 
     # Rotation path constraints
     rotation.add_path_constraint(name='rotation_eom.f_mg', lower=0, units='N')
